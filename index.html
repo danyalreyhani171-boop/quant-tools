@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quant Tools</title>
+<meta name="description" content="Simple quantitative tools for analysing the market.">
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #131823;
+    --panel-2: #1a2130;
+    --border: #273044;
+    --text: #e6eaf2;
+    --muted: #8a94a8;
+    --accent: #4f8cff;
+    --green: #2fbf71;
+    --red: #ef5b5b;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 32px 20px 12px;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0; font-size: 28px; letter-spacing: -0.02em; }
+  header h1 span { color: var(--accent); }
+  header p { margin: 6px 0 0; color: var(--muted); }
+
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(11,14,20,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs {
+    max-width: 880px; margin: 0 auto;
+    display: flex; gap: 6px; overflow-x: auto;
+    padding: 10px 20px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 0 0 auto;
+    background: var(--panel); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 14px; font-size: 14px; cursor: pointer;
+    font-family: inherit;
+  }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 20px; }
+  section.tool { display: none; }
+  section.tool.active { display: block; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 20px; }
+  .card .desc { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input, select, textarea {
+    width: 100%;
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; font-size: 16px; font-family: inherit;
+  }
+  textarea { min-height: 110px; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 14px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 18px; }
+  .stat {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px;
+  }
+  .stat .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat .v { font-size: 20px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .error { color: var(--red); font-size: 14px; margin-top: 12px; }
+  svg.chart { width: 100%; height: 220px; margin-top: 18px; display: block; }
+  footer { max-width: 880px; margin: 0 auto; padding: 10px 20px 40px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Quant<span>Tools</span></h1>
+  <p>Simple quantitative tools for analysing the market. Everything runs in your browser.</p>
+</header>
+
+<nav>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tool="position">Position Size</button>
+    <button class="tab" data-tool="returns">Returns &amp; Risk</button>
+    <button class="tab" data-tool="options">Option Pricer</button>
+    <button class="tab" data-tool="kelly">Kelly</button>
+    <button class="tab" data-tool="compound">Compound Growth</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- POSITION SIZE -->
+  <section class="tool active" id="tool-position">
+    <div class="card">
+      <h2>Position Size Calculator</h2>
+      <p class="desc">How many shares to buy so a stop-loss hit only costs a set % of your account.</p>
+      <div class="grid">
+        <div><label>Account size ($)</label><input type="number" id="ps-account" value="10000"></div>
+        <div><label>Risk per trade (%)</label><input type="number" id="ps-risk" value="1" step="0.1"></div>
+        <div><label>Entry price</label><input type="number" id="ps-entry" value="100" step="0.01"></div>
+        <div><label>Stop-loss price</label><input type="number" id="ps-stop" value="95" step="0.01"></div>
+      </div>
+      <div class="results" id="ps-out"></div>
+    </div>
+  </section>
+
+  <!-- RETURNS & RISK -->
+  <section class="tool" id="tool-returns">
+    <div class="card">
+      <h2>Returns &amp; Risk Analyser</h2>
+      <p class="desc">Paste a list of prices (oldest first) to get return, volatility, Sharpe ratio and max drawdown.</p>
+      <label>Prices (separated by commas, spaces or new lines)</label>
+      <textarea id="rr-prices">100 101.5 100.8 102.3 103.1 101.9 104.2 105.0 103.7 106.1 107.4 106.0 108.3 109.1 107.8 110.2</textarea>
+      <div class="grid" style="margin-top:14px">
+        <div>
+          <label>Price frequency</label>
+          <select id="rr-freq">
+            <option value="252">Daily</option>
+            <option value="52">Weekly</option>
+            <option value="12">Monthly</option>
+          </select>
+        </div>
+        <div><label>Risk-free rate (% per year)</label><input type="number" id="rr-rf" value="4" step="0.1"></div>
+      </div>
+      <div class="results" id="rr-out"></div>
+      <svg class="chart" id="rr-chart"></svg>
+    </div>
+  </section>
+
+  <!-- OPTIONS -->
+  <section class="tool" id="tool-options">
+    <div class="card">
+      <h2>Black-Scholes Option Pricer</h2>
+      <p class="desc">Fair value and Greeks for European call and put options.</p>
+      <div class="grid">
+        <div><label>Stock price (S)</label><input type="number" id="bs-s" value="100" step="0.01"></div>
+        <div><label>Strike price (K)</label><input type="number" id="bs-k" value="100" step="0.01"></div>
+        <div><label>Days to expiry</label><input type="number" id="bs-days" value="30"></div>
+        <div><label>Volatility (% per year)</label><input type="number" id="bs-vol" value="25" step="0.1"></div>
+        <div><label>Risk-free rate (%)</label><input type="number" id="bs-r" value="4" step="0.1"></div>
+        <div><label>Dividend yield (%)</label><input type="number" id="bs-q" value="0" step="0.1"></div>
+      </div>
+      <div class="results" id="bs-out"></div>
+      <p class="note">Theta is per calendar day. Vega is per 1 percentage point change in volatility.</p>
+    </div>
+  </section>
+
+  <!-- KELLY -->
+  <section class="tool" id="tool-kelly">
+    <div class="card">
+      <h2>Kelly Criterion</h2>
+      <p class="desc">The bet size that grows your account fastest in the long run, given your edge.</p>
+      <div class="grid">
+        <div><label>Win rate (%)</label><input type="number" id="k-win" value="55" step="0.1"></div>
+        <div><label>Average win ($)</label><input type="number" id="k-avgwin" value="150" step="0.01"></div>
+        <div><label>Average loss ($)</label><input type="number" id="k-avgloss" value="100" step="0.01"></div>
+      </div>
+      <div class="results" id="k-out"></div>
+      <p class="note">Full Kelly is very aggressive. Many traders use half Kelly or less.</p>
+    </div>
+  </section>
+
+  <!-- COMPOUND -->
+  <section class="tool" id="tool-compound">
+    <div class="card">
+      <h2>Compound Growth</h2>
+      <p class="desc">How an investment grows with regular monthly contributions.</p>
+      <div class="grid">
+        <div><label>Starting amount ($)</label><input type="number" id="cg-start" value="5000"></div>
+        <div><label>Monthly contribution ($)</label><input type="number" id="cg-monthly" value="300"></div>
+        <div><label>Annual return (%)</label><input type="number" id="cg-rate" value="8" step="0.1"></div>
+        <div><label>Years</label><input type="number" id="cg-years" value="20"></div>
+      </div>
+      <div class="results" id="cg-out"></div>
+      <svg class="chart" id="cg-chart"></svg>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  For educational purposes only. Not financial advice.
+</footer>
+
+<script>
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value);
+const money = x => (x < 0 ? '-$' : '$') + Math.abs(x).toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+const pct = (x, d = 2) => (x * 100).toFixed(d) + '%';
+const fmt = (x, d = 4) => Number.isFinite(x) ? x.toFixed(d) : '—';
+const cls = x => x > 0 ? 'pos' : x < 0 ? 'neg' : '';
+
+function stats(el, items) {
+  el.innerHTML = items.map(([k, v, c = '']) =>
+    `<div class="stat"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`).join('');
+}
+function error(el, msg) { el.innerHTML = `<div class="error">${msg}</div>`; }
+
+// Simple line chart in SVG. series: [{values, color}]
+function lineChart(svg, series) {
+  const W = svg.clientWidth || 600, H = 220, pad = 30;
+  const all = series.flatMap(s => s.values);
+  const min = Math.min(...all), max = Math.max(...all);
+  const n = Math.max(...series.map(s => s.values.length));
+  const x = i => pad + (i / Math.max(n - 1, 1)) * (W - pad * 2);
+  const y = v => H - pad - ((v - min) / ((max - min) || 1)) * (H - pad * 2);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML =
+    `<line x1="${pad}" y1="${H - pad}" x2="${W - pad}" y2="${H - pad}" stroke="#273044"/>` +
+    series.map(s => `<polyline fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linejoin="round"
+      points="${s.values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}"/>`).join('') +
+    `<text x="${pad}" y="16" fill="#8a94a8" font-size="12">${max.toLocaleString(undefined,{maximumFractionDigits:2})}</text>` +
+    `<text x="${pad}" y="${H - 8}" fill="#8a94a8" font-size="12">${min.toLocaleString(undefined,{maximumFractionDigits:2})}</text>`;
+}
+
+// Standard normal CDF and PDF
+function normPdf(x) { return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI); }
+function normCdf(x) {
+  // Abramowitz & Stegun 7.1.26
+  const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+  return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+}
+
+// ---------- tools ----------
+function positionSize() {
+  const acct = num('ps-account'), risk = num('ps-risk') / 100, entry = num('ps-entry'), stop = num('ps-stop');
+  const out = $('ps-out');
+  if (![acct, risk, entry, stop].every(Number.isFinite) || acct <= 0 || entry <= 0) return error(out, 'Fill in all fields with positive numbers.');
+  const perShare = Math.abs(entry - stop);
+  if (perShare === 0) return error(out, 'Entry and stop-loss can’t be the same price.');
+  const dollarRisk = acct * risk;
+  const shares = Math.floor(dollarRisk / perShare);
+  const value = shares * entry;
+  stats(out, [
+    ['Shares to buy', shares.toLocaleString()],
+    ['Max loss', money(shares * perShare), 'neg'],
+    ['Position value', money(value)],
+    ['% of account', pct(value / acct, 1)],
+    ['Risk per share', money(perShare)],
+    ['Direction', stop < entry ? 'Long' : 'Short'],
+  ]);
+}
+
+function returnsRisk() {
+  const out = $('rr-out');
+  const prices = $('rr-prices').value.split(/[\s,;]+/).map(parseFloat).filter(Number.isFinite);
+  const periods = num('rr-freq'), rf = num('rr-rf') / 100;
+  if (prices.length < 3) { $('rr-chart').innerHTML = ''; return error(out, 'Enter at least 3 prices.'); }
+  if (prices.some(p => p <= 0)) { $('rr-chart').innerHTML = ''; return error(out, 'Prices must be positive.'); }
+
+  const rets = prices.slice(1).map((p, i) => p / prices[i] - 1);
+  const n = rets.length;
+  const mean = rets.reduce((a, b) => a + b, 0) / n;
+  const sd = Math.sqrt(rets.reduce((a, r) => a + (r - mean) ** 2, 0) / (n - 1));
+  const total = prices[n] / prices[0] - 1;
+  const annRet = Math.pow(1 + total, periods / n) - 1;
+  const annVol = sd * Math.sqrt(periods);
+  const sharpe = annVol > 0 ? (mean * periods - rf) / annVol : NaN;
+  const downside = Math.sqrt(rets.reduce((a, r) => a + Math.min(r, 0) ** 2, 0) / n) * Math.sqrt(periods);
+  const sortino = downside > 0 ? (mean * periods - rf) / downside : NaN;
+
+  let peak = prices[0], mdd = 0;
+  for (const p of prices) { peak = Math.max(peak, p); mdd = Math.min(mdd, p / peak - 1); }
+
+  stats(out, [
+    ['Total return', pct(total), cls(total)],
+    ['Annualised return', pct(annRet), cls(annRet)],
+    ['Annualised volatility', pct(annVol)],
+    ['Sharpe ratio', fmt(sharpe, 2), cls(sharpe)],
+    ['Sortino ratio', fmt(sortino, 2), cls(sortino)],
+    ['Max drawdown', pct(mdd), 'neg'],
+    ['Best period', pct(Math.max(...rets)), 'pos'],
+    ['Worst period', pct(Math.min(...rets)), 'neg'],
+  ]);
+  lineChart($('rr-chart'), [{ values: prices, color: '#4f8cff' }]);
+}
+
+function blackScholes() {
+  const S = num('bs-s'), K = num('bs-k'), T = num('bs-days') / 365, v = num('bs-vol') / 100, r = num('bs-r') / 100, q = num('bs-q') / 100;
+  const out = $('bs-out');
+  if (![S, K, T, v, r, q].every(Number.isFinite) || S <= 0 || K <= 0 || T <= 0 || v <= 0) return error(out, 'Price, strike, days and volatility must be positive.');
+  const sqT = Math.sqrt(T);
+  const d1 = (Math.log(S / K) + (r - q + v * v / 2) * T) / (v * sqT);
+  const d2 = d1 - v * sqT;
+  const dfq = Math.exp(-q * T), dfr = Math.exp(-r * T);
+  const call = S * dfq * normCdf(d1) - K * dfr * normCdf(d2);
+  const put = K * dfr * normCdf(-d2) - S * dfq * normCdf(-d1);
+  const gamma = dfq * normPdf(d1) / (S * v * sqT);
+  const vega = S * dfq * normPdf(d1) * sqT / 100;
+  const thetaCall = (-S * dfq * normPdf(d1) * v / (2 * sqT) - r * K * dfr * normCdf(d2) + q * S * dfq * normCdf(d1)) / 365;
+  const thetaPut = (-S * dfq * normPdf(d1) * v / (2 * sqT) + r * K * dfr * normCdf(-d2) - q * S * dfq * normCdf(-d1)) / 365;
+  stats(out, [
+    ['Call price', money(call)],
+    ['Put price', money(put)],
+    ['Call delta', fmt(dfq * normCdf(d1), 3)],
+    ['Put delta', fmt(dfq * (normCdf(d1) - 1), 3)],
+    ['Gamma', fmt(gamma, 4)],
+    ['Vega', fmt(vega, 3)],
+    ['Call theta', fmt(thetaCall, 3), 'neg'],
+    ['Put theta', fmt(thetaPut, 3), cls(thetaPut)],
+  ]);
+}
+
+function kelly() {
+  const p = num('k-win') / 100, w = num('k-avgwin'), l = num('k-avgloss');
+  const out = $('k-out');
+  if (![p, w, l].every(Number.isFinite) || p <= 0 || p >= 1 || w <= 0 || l <= 0) return error(out, 'Win rate must be between 0 and 100, and wins/losses positive.');
+  const b = w / l;
+  const f = p - (1 - p) / b;
+  const ev = p * w - (1 - p) * l;
+  stats(out, [
+    ['Full Kelly', f > 0 ? pct(f, 1) : '0% (no edge)', cls(f)],
+    ['Half Kelly', f > 0 ? pct(f / 2, 1) : '0%'],
+    ['Quarter Kelly', f > 0 ? pct(f / 4, 1) : '0%'],
+    ['Win/loss ratio', fmt(b, 2)],
+    ['Expected value / trade', money(ev), cls(ev)],
+  ]);
+}
+
+function compound() {
+  const start = num('cg-start'), monthly = num('cg-monthly'), rate = num('cg-rate') / 100, years = Math.round(num('cg-years'));
+  const out = $('cg-out');
+  if (![start, monthly, rate, years].every(Number.isFinite) || years <= 0 || years > 100) { $('cg-chart').innerHTML = ''; return error(out, 'Enter valid numbers (years between 1 and 100).'); }
+  const m = Math.pow(1 + rate, 1 / 12) - 1;
+  let bal = start, contributed = start;
+  const balances = [start], contribs = [start];
+  for (let y = 1; y <= years; y++) {
+    for (let k = 0; k < 12; k++) { bal = bal * (1 + m) + monthly; contributed += monthly; }
+    balances.push(bal); contribs.push(contributed);
+  }
+  stats(out, [
+    ['Final value', money(bal), 'pos'],
+    ['Total contributed', money(contributed)],
+    ['Investment growth', money(bal - contributed), cls(bal - contributed)],
+    ['Growth multiple', fmt(bal / Math.max(contributed, 1e-9), 2) + '×'],
+  ]);
+  lineChart($('cg-chart'), [
+    { values: contribs, color: '#8a94a8' },
+    { values: balances, color: '#2fbf71' },
+  ]);
+}
+
+// ---------- wiring ----------
+const tools = { position: positionSize, returns: returnsRisk, options: blackScholes, kelly, compound };
+
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.tool').forEach(s => s.classList.toggle('active', s.id === 'tool-' + btn.dataset.tool));
+  tools[btn.dataset.tool]();
+  history.replaceState(null, '', '#' + btn.dataset.tool);
+}));
+
+Object.entries(tools).forEach(([name, fn]) => {
+  document.querySelectorAll(`#tool-${name} input, #tool-${name} select, #tool-${name} textarea`)
+    .forEach(el => el.addEventListener('input', fn));
+});
+
+const initial = location.hash.slice(1);
+if (tools[initial]) document.querySelector(`.tab[data-tool="${initial}"]`).click();
+else positionSize();
+</script>
+</body>
+</html>
