@@ -79,3 +79,23 @@ The product is the detection, the scoring and the invalidation — not a predict
 Analysis tooling, not investment advice. Nothing here is a personal recommendation. Trading leveraged
 instruments carries a high risk of rapid loss. A zone is a level where price reacted before; it is not
 a guarantee that price will react there again.
+
+## Engine
+
+`engine/` is a line-for-line Python port of the Pine indicator. Pine cannot be unit
+tested; this can.
+
+```
+engine/sd.py         the port — detection, scoring, lifecycle, MTF driver
+engine/tests.py      50 tests pinning each rule against hand-built bars
+engine/diagnose.py   score distribution, death causes, lifetimes
+```
+
+```bash
+python3 engine/tests.py                  # 50 passing
+python3 engine/diagnose.py               # synthetic GBPUSD-shaped downtrend
+python3 engine/diagnose.py export.csv    # a TradingView export
+```
+
+Pure standard library, no dependencies. Points where Pine's semantics are ambiguous are
+marked `PINE-NOTE` in the source.
