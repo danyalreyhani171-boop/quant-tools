@@ -657,7 +657,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <div><span class="mk">+</span><span>Confluence marking where timeframes agree</span></div>
           <div><span class="mk">+</span><span>Alerts on 1H and 4H — new zone and first touch</span></div>
           <div><span class="mk">+</span><span>Live zone table with test counts and age</span></div>
-          <div><span class="mk">+</span><span>The indicator for your own TradingView charts</span></div>
+          <div><span class="mk">+</span><span>Webhook payloads for your own tooling</span></div>
+          <div><span class="mk">+</span><span>Nothing to install — the engine runs on our side</span></div>
         </div>
         <a class="btn btn-primary" href="#" style="margin-top:24px; width:100%; text-align:center">Subscribe</a>
         <a class="btn btn-ghost" href="#terminal" style="margin-top:8px; width:100%; text-align:center">See the terminal first</a>
@@ -720,7 +721,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <button role="tab" id="ttab-all" aria-selected="false" data-t="all">All zones<span class="count">17</span></button>
     <button role="tab" id="ttab-log" aria-selected="false" data-t="log">Zone log</button>
     <button role="tab" id="ttab-alerts" aria-selected="false" data-t="alerts">Alerts</button>
-    <button role="tab" id="ttab-scripts" aria-selected="false" data-t="scripts">Indicator</button>
+    <button role="tab" id="ttab-delivery" aria-selected="false" data-t="delivery">Delivery</button>
   </div>
 
   <div class="wrap term-body">
@@ -810,7 +811,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
         <div class="cfg-group">
           <h4>Minimum score</h4>
-          <p>Nothing below this is sent. Alerts fire on 1H and 4H zones only; weekly and daily zones still draw on the chart.</p>
+          <p>Nothing below this is sent. Alerts fire on 1H and 4H zones only; weekly and daily zones still appear in the terminal and still supply the ★ confluence marking.</p>
           <div class="slider-row">
             <input type="range" id="minScore" min="4" max="10" value="7" step="1" aria-label="Minimum score to alert">
             <div class="toggle-row" style="border:0; padding:0">
@@ -833,57 +834,52 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       </div>
     </div>
 
-    <div id="tp-scripts" role="tabpanel" aria-labelledby="ttab-scripts" hidden>
+    <div id="tp-delivery" role="tabpanel" aria-labelledby="ttab-delivery" hidden>
       <div class="cards">
         <div class="scard">
-          <div class="scard-head">
-            <span class="p">mtf-supply-demand.pine</span>
-            <span class="tf-chip">Pine v6</span>
-            <span class="zone-pill zp-demand">Included</span>
-          </div>
-          <div class="scard-main">
-            <p style="font-size:13.5px; color:var(--fg-dim)">
-              Weekly, daily, 4H and 1H zones on one chart, each scored and marked where it nests inside
-              a higher-timeframe zone. Four invalidation rules, gap-aware so futures rolls don't
-              manufacture zones. Runs on any instrument, not just the six.
-            </p>
-            <pre class="code-block"><code>// Timeframes: show / max age
-onW/agW  Weekly                    [on]  52
-onD/agD  Daily                     [on] 120
-on4/ag4  4H                        [on]  60
-on1/ag1  1H                        [on] 120
-zMax     Zones per side               3
-
-// Zone rules
-sdBase   Max base candles             6
-sdBody   Base body ≤ % of range     50%
-sdBH     Zone height ≤ x ATR        1.5
-sdDep    Move away ≥ x ATR          1.5
-sdEdge   Zone edges         Wick-Body
-sdTests  Remove after N tests         3
-noGap    Ignore gap moves          [on]</code></pre>
-          </div>
-          <div class="scard-foot">
-            <span>214 lines · non-repainting · ★ confluence marking</span>
-            <button class="copy-btn" type="button" id="copyInstall" style="margin-left:auto">Copy install steps</button>
-          </div>
-        </div>
-
-        <div class="scard">
-          <div class="scard-head"><span class="p">Setting it up</span></div>
+          <div class="scard-head"><span class="p">How a zone reaches you</span></div>
           <div class="scard-main">
             <div class="rules">
-              <div class="rule"><span class="n">1</span><div><h4>Pine Editor</h4><p>TradingView → Pine Editor → new indicator. Paste, Save, Add to chart.</p></div></div>
-              <div class="rule"><span class="n">2</span><div><h4>Futures</h4><p>Enable back-adjustment (B-ADJ) on NQ1! and ES1! so contract rolls don't create false zones.</p></div></div>
-              <div class="rule"><span class="n">3</span><div><h4>Alerts</h4><p>Condition "MTF S&amp;D", Any alert() function call. The script fires on new confluence zones and on first touch of a fresh zone.</p></div></div>
-              <div class="rule"><span class="n">4</span><div><h4>Timeframe</h4><p>Each timeframe draws only on charts at or below it, so a 1H chart shows all four and a weekly chart shows only weekly.</p></div></div>
+              <div class="rule"><span class="n">1</span><div><h4>The bar closes</h4><p>Every zone is evaluated on closed bars only. Nothing is published mid-bar and nothing is revised afterwards.</p></div></div>
+              <div class="rule"><span class="n">2</span><div><h4>It is scored and checked for confluence</h4><p>Against every live zone on the higher timeframes, before it is published.</p></div></div>
+              <div class="rule"><span class="n">3</span><div><h4>It appears here and in your alerts</h4><p>The terminal updates and your chosen channels fire, within seconds of the close.</p></div></div>
+              <div class="rule"><span class="n">4</span><div><h4>It is tracked until it dies</h4><p>Tests counted, score updated, removed on invalidation. You are told when a level you were watching is gone.</p></div></div>
             </div>
           </div>
         </div>
+
+        <div class="scard">
+          <div class="scard-head">
+            <span class="p">Webhook payload</span>
+            <span class="tf-chip">JSON</span>
+          </div>
+          <div class="scard-main">
+            <p style="font-size:13.5px; color:var(--fg-dim)">
+              For anyone running their own tooling. Every alert posts the full zone, so you can route
+              it into a journal, a bot or a spreadsheet.
+            </p>
+            <pre class="code-block"><code>{
+  "instrument": "GBPUSD",
+  "timeframe":  "4H",
+  "event":      "first_touch",
+  "side":       "demand",
+  "score":      8,
+  "top":        1.30160,
+  "bottom":     1.29910,
+  "tests":      1,
+  "age_bars":   11,
+  "confluence": "D",
+  "closed_at":  "2026-11-23T16:00:00Z"
+}</code></pre>
+          </div>
+          <div class="scard-foot">
+            <span>Delivered on bar close · retried on failure</span>
+          </div>
+        </div>
       </div>
-      <p class="price-note" style="margin-top:16px" id="copyNote">
-        Full source is delivered in the member area and runs on your own TradingView charts — so the
-        zones are on the chart you actually trade from, not only here.
+      <p class="price-note" style="margin-top:16px">
+        The detection engine runs on our infrastructure. You receive the zones, their scores and their
+        invalidation — there is nothing to install, configure or keep updated.
       </p>
     </div>
   </div>
@@ -1317,26 +1313,6 @@ noGap    Ignore gap moves          [on]</code></pre>
   }
   ms.addEventListener("input", msUpdate);
   msUpdate();
-
-  /* copy install steps — downloads are inert inside this frame */
-  var INSTALL = "DRQuantMTF — MTF Supply & Demand install\n\n" +
-    "1. TradingView > Pine Editor > new indicator\n" +
-    "2. Paste mtf-supply-demand.pine, Save, Add to chart\n" +
-    "3. On NQ1! and ES1! enable back-adjustment (B-ADJ) so rolls don't create false zones\n" +
-    "4. Create an alert: condition 'MTF S&D', Any alert() function call\n\n" +
-    "Zones show only on charts at or below their own timeframe, so a 1H chart shows all four.";
-  var cb = document.getElementById("copyInstall");
-  var copyNote = document.getElementById("copyNote");
-  cb.addEventListener("click", function () {
-    var done = function () {
-      cb.textContent = "Copied";
-      setTimeout(function () { cb.textContent = "Copy install steps"; }, 1800);
-    };
-    var fail = function () {
-      copyNote.textContent = "Clipboard blocked here — the install steps ship with the script in the member area.";
-    };
-    try { navigator.clipboard.writeText(INSTALL).then(done, fail); } catch (e) { fail(); }
-  });
 
   /* ── terminal tabs ────────────────────────────── */
   var ttabs = Array.prototype.slice.call(document.querySelectorAll(".term-tabs button"));
