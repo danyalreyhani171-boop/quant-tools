@@ -69,33 +69,61 @@ bars each is well under a second, and it removes every class of drift bug.
 
 ---
 
-## 3. Data
+## 3. Data — MetaTrader 5
 
-Four instruments, 1H bars (4H, D and W are resampled from them — `engine/sd.py` already does
-this, so the provider only needs one granularity).
+Four instruments, H1 bars. 4H, D and W are resampled by the engine, so the feed only needs one
+granularity.
 
-| Instrument | What it is | Note |
+**Decision: pull from a running MT5 terminal, using CFDs for the index and the oil.**
+
+| Our name | Broker symbol | Why |
 |---|---|---|
-| XAUUSD | Gold spot | Widely available, cheap |
-| GBPUSD | FX major | Widely available, cheap |
-| NQ1! | E-mini Nasdaq continuous | **CME licensing — check cost** |
-| CL1! | WTI crude continuous | **CME licensing — check cost** |
+| XAUUSD | XAUUSD | Spot |
+| GBPUSD | GBPUSD | Spot |
+| NQ1! | NAS100 / USTEC | **CFD** — no expiry, no rolls, no CME licence |
+| CL1! | USOIL / WTI | **CFD** — same |
 
-Providers worth pricing: Databento, Polygon.io, Twelve Data, EODHD, Tiingo. Spot FX and metals
-are commodity-cheap; the two CME contracts are where the cost sits, and continuous contracts
-need back-adjustment applied by the provider or by you — the same requirement the Pine script
-has on the chart.
+Why this over a paid data API or TradingView webhooks:
 
-**Verify before committing**: per-month cost for the two futures symbols, whether continuous
-back-adjusted series are offered, and redistribution terms, since you are showing derived
-levels to paying subscribers.
+| | TradingView webhooks | Paid data API | **MT5** |
+|---|---|---|---|
+| Cost | Free | £20-100/mo, more for CME | **Free** |
+| Backfill | None | Yes | **Yes, broker history** |
+| Missed bars | Lost for good | No | **No — it pulls** |
+| CME licence | Applies to the futures | Applies to the futures | **Not needed, CFDs** |
+| Contract rolls | Yes | Yes | **None** |
 
-The provider is behind one interface so swapping is a single file:
+Three things this costs:
+
+- **Windows.** The `MetaTrader5` package needs the terminal running on the same machine, and
+  is Windows-only. The poller wants a Windows VPS, or MT5 under Wine.
+- **Broker-specific prices.** CFD quotes differ slightly between brokers, so a member on
+  another broker sees levels a few points off. Immaterial for a zone band; say so in the copy.
+- **Server time decides the D and W candles.** See below.
+
+### Session offset
+
+The broker's server timezone sets when the daily and weekly candle opens, and that moves where
+the D and W zones sit. Brokers usually run GMT+2/+3 with DST, not UTC.
+
+`resample()` takes an `offset`, and `Params(session_offset=...)` carries it through. Read it
+from the terminal with `MT5Feed.detect_session_offset()` — for a GMT+3 broker that is
+`-10800`, putting the day break at 21:00 UTC exactly as the chart shows it. **Re-check after
+each DST change**, or the D and W zones will quietly drift by an hour.
+
+The 4H buckets stay aligned to the hour and are unaffected.
+
+### Swapping provider later
+
+Everything sits behind one interface, so moving to a paid feed is one file:
 
 ```python
 class Feed(Protocol):
     def bars(self, symbol: str, since: int) -> list[Bar]: ...
 ```
+
+Worth doing when broker-specific pricing or the Windows requirement starts to hurt. Providers
+to price then: EODHD, Twelve Data, fastFOREX, Polygon, Databento.
 
 ---
 

@@ -50,6 +50,7 @@ class Params:
     no_gap: bool = True         # noGap
     z_max: int = 3              # zMax    — zones per side
     fixed: bool = True          # the v2 corrections; set False to reproduce v1 behaviour
+    session_offset: int = 0     # seconds to shift the D/W candle boundary off UTC midnight
     age_w: int = 52
     age_d: int = 120
     age_4h: int = 60
@@ -452,12 +453,19 @@ class ZoneBook:
 # ───────────────────────── multi-timeframe driver ─────────────────────────
 
 
-def resample(bars: list[Bar], seconds: int) -> list[Bar]:
-    """Aggregate 1H bars into a higher timeframe, bucketing on epoch time."""
+def resample(bars: list[Bar], seconds: int, offset: int = 0) -> list[Bar]:
+    """
+    Aggregate 1H bars into a higher timeframe.
+
+    `offset` shifts the bucket boundary off UTC midnight. It matters because the broker's
+    server timezone decides when the daily and weekly candle opens, and that changes where
+    the D and W zones sit. An MT5 broker on GMT+3 wants offset = -3 * 3600, so the day
+    breaks at 21:00 UTC exactly as it does on the chart. Leave it at 0 for UTC-aligned data.
+    """
     out: list[Bar] = []
     cur: Optional[list] = None
     for b in bars:
-        bucket = b.time - (b.time % seconds)
+        bucket = ((b.time - offset) // seconds) * seconds + offset
         if cur is None or cur[0] != bucket:
             if cur is not None:
                 out.append(Bar(cur[0], cur[1], cur[2], cur[3], cur[4]))
@@ -494,9 +502,10 @@ def run(
     p = p or Params()
     book = ZoneBook(p)
 
+    # the session offset only moves the D and W boundaries; 4H buckets stay aligned to the hour
     series = {
-        0: resample(bars_1h, TF_SECONDS[0]),
-        1: resample(bars_1h, TF_SECONDS[1]),
+        0: resample(bars_1h, TF_SECONDS[0], p.session_offset),
+        1: resample(bars_1h, TF_SECONDS[1], p.session_offset),
         2: resample(bars_1h, TF_SECONDS[2]),
         3: bars_1h,
     }

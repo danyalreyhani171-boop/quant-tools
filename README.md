@@ -123,3 +123,13 @@ result against what is stored. Zones that appeared, changed or vanished become `
 `touched` and `invalidated` events. Nothing is reconstructed from a stream, so nothing drifts.
 
 Pure standard library. See `docs/backend.md` for the architecture, schema and build order.
+
+### Data
+
+Bars come from a running MetaTrader 5 terminal (`server/feed_mt5.py`), using CFDs for the index
+and the oil — no exchange licensing, no contract rolls, full broker history, free. The package
+is Windows-only and needs the terminal open on the same machine.
+
+Set `Params(session_offset=...)` from `MT5Feed.detect_session_offset()`. The broker's server
+timezone decides when the daily and weekly candle opens, so without it the D and W zones will
+not match the chart. Re-check after each DST change.
