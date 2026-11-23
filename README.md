@@ -2,8 +2,8 @@
 
 **Direction & Resistance Quantitative Medium Frequency Trading**
 
-A signal service built on two complementary indicators. SMT divergence sets direction; multi-timeframe
-supply and demand marks the level. Neither is a trade on its own — where they overlap is the setup.
+Multi-timeframe supply and demand zones, scored and self-invalidating. Weekly, daily, 4H and 1H
+zones built by one set of rules, graded out of ten, and marked where the timeframes agree.
 
 Subscription: £47.99/month.
 
@@ -13,86 +13,69 @@ Subscription: £47.99/month.
 
 ```
 indicators/
-  smt-divergence.pine      SMT divergence across a correlated pair, 1H/4H
   mtf-supply-demand.pine   W/D/4H/1H supply & demand zones
 web/
-  index.html               Product site
-docs/
-  smt-research.md          Research notes behind the SMT engine
+  index.html               Product site and member terminal
 ```
 
-## Signals
+## The signal
 
-### 1. SMT divergence — direction
+A zone qualifies when an impulse candle with a body of at least one ATR leaves a tight base, and the
+move away clears two tests: **≥1.5 ATR** and **≥2× the zone's own height**. The base is up to six
+small-bodied candles (weekly uses two, daily three). Gap-driven moves are discarded so futures rolls
+and weekend gaps don't manufacture zones.
 
-Non-confirmation between two positively correlated instruments at the same swing.
+### Scoring — 10 points
 
-| Setup | Primary | Reference | Reading |
-|---|---|---|---|
-| Bullish | Lower Low | Higher Low | Low swept on one side only |
-| Bearish | Higher High | Lower High | High swept on one side only |
+| Component | Points |
+|---|---|
+| Departure strength | ≥2.5 ATR = 3 · ≥2 ATR = 2 · else 1 |
+| Base tightness | 3 candles or fewer = 2 · else 1 |
+| Break of structure | +2 |
+| Fair value gap in the leg | +1 |
+| Freshness | untested +2 · one test +1 |
 
-Gated on **rolling 60-bar log-return correlation**. Below 0.70 the signal is suppressed entirely;
-0.85 and above earns the full pairing-quality score. Correlation breakdown is the technique's
-dominant failure mode, so the gate runs before the divergence is believed.
+Freshness is live, so a 9/10 becomes an 8 on first test and a 7 on second. The label reads
+`D demand 9/10 ★ in W` — timeframe, side, score, and the ★ marking a zone nested inside a
+higher-timeframe zone of the same direction.
 
-Requires a **liquidity sweep** by default: the prior swing taken out intrabar and given back by the
-close. A divergence without one is two charts drifting apart, not a signal.
+### Invalidation — four ways
 
-Scored out of 10 — see `docs/smt-research.md` §6.
+1. **No follow-through** — close back against the zone within two bars of forming
+2. **Age limit** — 52 weekly bars, 120 daily, 60 on 4H, 120 on 1H
+3. **Close beyond the far edge** — plus the cascade: weekly zones break on a daily close, daily on a 4H close
+4. **Test count** — three touches and the zone is removed
 
-### 2. Multi-timeframe supply & demand — resistance
-
-Zones built by identical rules on weekly, daily, 4H and 1H, scored out of 10, with ★ marking a zone
-nested inside a higher-timeframe zone of the same direction. Four invalidation paths: no
-follow-through within two bars, age limit, close beyond the far edge, or test count reaching its cap.
-Weekly zones also break on a daily close, daily on a 4H close.
-
-Gap-driven moves are discarded so futures rolls and weekend gaps don't manufacture zones. Enable
-back-adjustment (B-ADJ) on futures charts.
+Zones per side are capped: three by default, two on weekly, four on 1H.
 
 ## Instruments
 
-| Pair | Primary | Reference | Class | Typical r | Grade |
-|---|---|---|---|---|---|
-| 01 | GBPUSD | EURUSD | FX majors | 0.79 | Primary |
-| 02 | NQ1! | ES1! | Index futures | 0.90+ | Gated |
-| 03 | XAUUSD | XAGUSD | Metals | 0.68–0.95 | Confirmation only |
+GBPUSD · EURUSD · NQ1! · ES1! · XAUUSD · XAGUSD
 
-Divergence is checked in both directions — either side of a pair can be the strong one.
-
-**NQ/ES is currently decoupled** by the AI-concentration unwind. The correlation gate handles this
-correctly by shutting; do not override it on this pair.
-
-Parked for a later release: GBPJPY, USDJPY, USDCAD, WTI, YM/RTY, and cash-vs-futures basis pairs
-(EURUSD/6E1!, XAUUSD/MGC1!, SP500/MES1!). The engine takes a pair config, so adding them is a config
-entry rather than a rewrite.
+The engine is instrument-agnostic — it reads price, not asset class — so this list is configuration,
+not architecture. Enable back-adjustment (B-ADJ) on futures charts.
 
 ## Timeframes
 
-1H and 4H only. Below 15m SMT fires constantly on microstructure noise; daily and above is too
-infrequent to be medium frequency. 4H carries more weight and scores +1.
+Zones are built on W/D/4H/1H. **Alerts fire on 1H and 4H only**; weekly and daily zones still draw on
+the chart and still supply the ★ confluence marking.
 
 ## Installation
 
-Both files are Pine Script v6. Paste into the TradingView Pine Editor and add to chart.
-
-`smt-divergence.pine` auto-pairs from the chart symbol for the three shipped pairs. Override with the
-**Reference symbol** input for anything else. The status panel shows the resolved pair, the live
-correlation and whether the gate is open.
+Pine Script v6. Paste into the TradingView Pine Editor and add to chart. For alerts, create one with
+condition "MTF S&D" and *Any alert() function call*. Each timeframe draws only on charts at or below
+it, so a 1H chart shows all four.
 
 ## No performance claims
 
 No win rate, profit factor or expectancy figure appears in this repository or on the site, and none
-will until it has been measured on logged out-of-sample signals with costs included. There is no
-peer-reviewed study of SMT divergence and no published backtest with transaction costs; any figure
-quoted for the technique elsewhere is unverified.
+will until it has been measured on logged out-of-sample zones with costs included. Any such figure
+quoted for supply and demand trading elsewhere is unverified.
 
-The product is the detection, the gate and the scoring — not a prediction.
+The product is the detection, the scoring and the invalidation — not a prediction.
 
 ## Risk
 
 Analysis tooling, not investment advice. Nothing here is a personal recommendation. Trading leveraged
-instruments carries a high risk of rapid loss. Past behaviour of a market relationship does not
-predict its future behaviour — both the gold/silver and NQ/ES pairs are live demonstrations of
-correlations breaking down.
+instruments carries a high risk of rapid loss. A zone is a level where price reacted before; it is not
+a guarantee that price will react there again.
