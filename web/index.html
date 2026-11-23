@@ -332,11 +332,17 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
 .metric .k { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-faint); }
 .metric .v { font-family: var(--f-mono); font-size: 15px; font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; }
 .minichart { border-top: 1px solid var(--line-soft); padding-top: 12px; }
-.minichart svg { width: 100%; height: auto; display: block; }
+.minichart canvas { width: 100%; height: 190px; display: block; }
 .minichart .cap {
   font-family: var(--f-mono); font-size: 10px; color: var(--fg-faint);
-  margin-top: 7px; display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 7px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
 }
+.tick-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--bull); flex: none;
+  animation: tickpulse 1.6s infinite;
+}
+@keyframes tickpulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+@media (prefers-reduced-motion: reduce) { .tick-dot { animation: none } }
 .breakdown { display: grid; gap: 5px; border-top: 1px solid var(--line-soft); padding-top: 11px; }
 .bd-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline; font-family: var(--f-mono); font-size: 11px; }
 .bd-row .mk { text-align: center; }
@@ -942,103 +948,180 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   var TF_ORDER = { "W": 0, "D": 1, "4H": 2, "1H": 3 };
 
-  /* A diagram of the instrument's own zone stack, with price on it.
-     Same idea as the explainer on the site, but drawn from the live levels. */
-  function miniChart(inst, focusTf) {
-    var mine = ZONES.filter(function (z) { return z[0] === inst; });
-    if (!mine.length) return "";
+  /* ── live candle chart ───────────────────────────
+     Canvas candles over the instrument's own zones, with the newest candle updating on a
+     tick. The ticks here are simulated — a published artifact cannot open a socket or fetch
+     a feed — but LiveChart.push(price) is the only entry point, so on real hosting it is fed
+     from the MT5 poller instead and nothing else changes. */
 
-    var px = PRICES[inst];
-    var path = PATHS[inst] || [];
-    var vals = [px].concat(path);
-    mine.forEach(function (z) {
-      var r = zRange(z[3]);
-      vals.push(r.lo, r.hi);
-    });
-    var lo = Math.min.apply(null, vals);
-    var hi = Math.max.apply(null, vals);
-    var pad = (hi - lo) * 0.14 || Math.abs(hi) * 0.001 || 1;
-    lo -= pad; hi += pad;
+  var TICK_MS = 900;          // how often a tick lands
+  var BARS_PER_CANDLE = 14;   // ticks before the candle closes and a new one opens
+  var N_CANDLES = 44;
 
-    // Bands on the left, labels in their own column on the right. Thin bands sit only a
-    // few pixels apart, so labels are spread to a minimum gap and joined to their band by
-    // a connector rather than written on top of it.
-    var W = 560, H = 172, mT = 14, mB = 14;
-    var xL = 8, xR = 268, labX = 292;
-    function y(v) { return mT + (hi - v) / (hi - lo) * (H - mT - mB); }
+  // per-tick movement, scaled to each instrument
+  var TICK_VOL = { "XAUUSD": 0.85, "GBPUSD": 0.00016, "NQ1!": 10.5, "CL1!": 0.045 };
 
-    // widest band first so the nesting reads correctly
-    var ordered = mine.slice().sort(function (a, b) {
-      return TF_ORDER[a[1]] - TF_ORDER[b[1]];
-    });
-
-    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
-            inst + ' zone stack with current price">';
-
-    var items = [];
-    ordered.forEach(function (z) {
-      var r = zRange(z[3]);
-      var col = z[2] === "demand" ? "var(--bull)" : "var(--bear)";
-      var focus = Boolean(focusTf && z[1] === focusTf);
-      var yt = y(r.hi), yb = y(r.lo);
-      s += '<rect x="' + xL + '" y="' + yt.toFixed(1) + '" width="' + (xR - xL) +
-           '" height="' + Math.max(2.5, yb - yt).toFixed(1) + '" fill="' + col +
-           '" fill-opacity="' + (focus ? 0.24 : 0.09) + '" stroke="' + col +
-           '" stroke-width="' + (focus ? 1.8 : 0.9) + '"/>';
-      items.push({
-        y: (yt + yb) / 2, col: col, focus: focus,
-        // z[4] is already the score as displayed — do not add freshness again
-        txt: z[1] + ' ' + z[2] + ' ' + z[4] + '/10' + (z[7] ? ' ★ in ' + z[7] : '')
-      });
-    });
-
-    // spread the labels downward to a minimum gap, then lift the whole run if it overflows
-    items.sort(function (a, b) { return a.y - b.y; });
-    var gap = 15, cursor = mT + 4;
-    items.forEach(function (it) {
-      it.ly = Math.max(it.y, cursor);
-      cursor = it.ly + gap;
-    });
-    var over = (cursor - gap) - (H - 6);
-    if (over > 0) items.forEach(function (it) { it.ly -= over; });
-
-    items.forEach(function (it) {
-      s += '<path d="M' + xR + ' ' + it.y.toFixed(1) + ' L' + (xR + 9) + ' ' + it.y.toFixed(1) +
-           ' L' + (labX - 11) + ' ' + it.ly.toFixed(1) + ' L' + (labX - 4) + ' ' + it.ly.toFixed(1) +
-           '" fill="none" stroke="' + it.col + '" stroke-width="0.9" opacity="0.5"/>';
-      s += '<text x="' + labX + '" y="' + (it.ly + 3.6).toFixed(1) +
-           '" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + it.col +
-           '" opacity="' + (it.focus ? 1 : 0.7) + '">' + it.txt + '</text>';
-    });
-
-    // the price line through the zones, then the level it closed at
-    var yp = y(px);
-    if (path.length > 1) {
-      var step = (xR - xL) / (path.length - 1);
-      var d = path.map(function (v, k) {
-        return (k === 0 ? "M" : "L") + (xL + k * step).toFixed(1) + " " + y(v).toFixed(1);
-      }).join(" ");
-      s += '<path d="' + d + '" fill="none" stroke="var(--fg)" stroke-width="1.9" ' +
-           'stroke-linejoin="round" stroke-linecap="round"/>';
-    }
-    s += '<line x1="' + xL + '" y1="' + yp.toFixed(1) + '" x2="' + xR + '" y2="' + yp.toFixed(1) +
-         '" stroke="var(--fg)" stroke-width="1" stroke-dasharray="2 4" opacity="0.55"/>';
-    s += '<circle cx="' + xR + '" cy="' + yp.toFixed(1) + '" r="3.4" fill="var(--fg)"/>';
-
-    // the label sits over the line and the bands, so it gets its own backing
-    var lift = yp < mT + 16 ? 14 : -8;
-    var lbl = fmtPx(px);
-    var ty = yp + lift;
-    var tw = lbl.length * 6.4 + 9;
-    s += '<rect x="' + (xR - 2 - tw).toFixed(1) + '" y="' + (ty - 9.5).toFixed(1) +
-         '" width="' + tw.toFixed(1) + '" height="13" rx="2" fill="var(--surface)" opacity="0.94"/>';
-    s += '<text x="' + (xR - 6) + '" y="' + ty.toFixed(1) +
-         '" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10.5" ' +
-         'font-weight="500" fill="var(--fg)">' + lbl + '</text>';
-
-    s += '</svg>';
-    return s;
+  function rng32(seed) {           // deterministic, so the seeded history never jumps
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var x = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
   }
+
+  // turn the close path into candles, so the chart opens with plausible history
+  function seedCandles(inst) {
+    var path = PATHS[inst] || [PRICES[inst]];
+    var vol = TICK_VOL[inst] || 1;
+    var r = rng32(inst.length * 7919 + Math.round((PRICES[inst] || 1) * 13));
+    var out = [], per = Math.max(1, Math.round(N_CANDLES / (path.length - 1 || 1)));
+    for (var i = 0; i < path.length - 1; i++) {
+      var from = path[i], to = path[i + 1];
+      for (var k = 0; k < per; k++) {
+        var o = from + (to - from) * (k / per);
+        var c = from + (to - from) * ((k + 1) / per) + (r() - 0.5) * vol * 2;
+        var wick = vol * (1.2 + r() * 2.2);
+        out.push({ o: o, c: c, h: Math.max(o, c) + r() * wick, l: Math.min(o, c) - r() * wick });
+      }
+    }
+    var last = out[out.length - 1];
+    if (last) { last.c = PRICES[inst]; last.h = Math.max(last.h, last.c); last.l = Math.min(last.l, last.c); }
+    return out.slice(-N_CANDLES);
+  }
+
+  function LiveChart(canvas, inst, focusTf) {
+    this.cv = canvas;
+    this.inst = inst;
+    this.focusTf = focusTf;
+    this.vol = TICK_VOL[inst] || 1;
+    this.candles = seedCandles(inst);
+    this.ticks = 0;
+    this.rand = rng32(inst.length * 104729 + 7);
+    this.zones = ZONES.filter(function (z) { return z[0] === inst; })
+      .map(function (z) {
+        var r = zRange(z[3]);
+        return { lo: r.lo, hi: r.hi, side: z[2], tf: z[1], score: z[4], star: z[7] };
+      })
+      .sort(function (x, y) { return TF_ORDER[x.tf] - TF_ORDER[y.tf]; });
+  }
+
+  // the one entry point. Simulated here; on hosting this is called from the feed.
+  LiveChart.prototype.push = function (price) {
+    var cur = this.candles[this.candles.length - 1];
+    cur.c = price;
+    if (price > cur.h) cur.h = price;
+    if (price < cur.l) cur.l = price;
+    this.ticks++;
+    if (this.ticks >= BARS_PER_CANDLE) {
+      this.ticks = 0;
+      this.candles.push({ o: price, c: price, h: price, l: price });
+      if (this.candles.length > N_CANDLES) this.candles.shift();
+    }
+  };
+
+  LiveChart.prototype.simTick = function () {
+    var last = this.candles[this.candles.length - 1].c;
+    this.push(last + (this.rand() - 0.5) * this.vol * 2);
+  };
+
+  LiveChart.prototype.draw = function () {
+    var cv = this.cv, cssW = cv.clientWidth || 520, cssH = cv.clientHeight || 190;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (cv.width !== Math.round(cssW * dpr)) {
+      cv.width = Math.round(cssW * dpr);
+      cv.height = Math.round(cssH * dpr);
+    }
+    var g = cv.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, cssW, cssH);
+
+    var css = getComputedStyle(document.documentElement);
+    var tok = function (n) { return css.getPropertyValue(n).trim(); };
+    var C = {
+      fg: tok("--fg"), dim: tok("--fg-dim"), faint: tok("--fg-faint"),
+      bull: tok("--bull"), bear: tok("--bear"), surface: tok("--surface"), line: tok("--line-soft")
+    };
+
+    var labW = 108, padT = 12, padB = 12;
+    var pxR = cssW - labW, pxL = 4;
+
+    var vals = [];
+    this.candles.forEach(function (k) { vals.push(k.h, k.l); });
+    this.zones.forEach(function (z) { vals.push(z.lo, z.hi); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var pad = (hi - lo) * 0.10 || Math.abs(hi) * 0.001 || 1;
+    lo -= pad; hi += pad;
+    var y = function (v) { return padT + (hi - v) / (hi - lo) * (cssH - padT - padB); };
+
+    // zones behind the candles
+    var self = this, placed = [];
+    this.zones.forEach(function (z) {
+      var col = z.side === "demand" ? C.bull : C.bear;
+      var focus = z.tf === self.focusTf;
+      var yt = y(z.hi), yb = y(z.lo);
+      g.globalAlpha = focus ? 0.22 : 0.085;
+      g.fillStyle = col;
+      g.fillRect(pxL, yt, pxR - pxL, Math.max(2, yb - yt));
+      g.globalAlpha = 1;
+      g.strokeStyle = col;
+      g.lineWidth = focus ? 1.6 : 0.8;
+      g.strokeRect(pxL + 0.5, yt + 0.5, pxR - pxL - 1, Math.max(2, yb - yt));
+
+      var ly = (yt + yb) / 2;
+      for (var i = 0; i < placed.length; i++) {
+        if (Math.abs(placed[i] - ly) < 14) { ly = placed[i] + 14; i = -1; }
+      }
+      ly = Math.max(12, Math.min(ly, cssH - 5));
+      placed.push(ly);
+      g.strokeStyle = col; g.globalAlpha = 0.45; g.lineWidth = 0.9;
+      g.beginPath(); g.moveTo(pxR, (yt + yb) / 2); g.lineTo(pxR + 7, ly); g.stroke();
+      g.globalAlpha = focus ? 1 : 0.72;
+      g.fillStyle = col;
+      g.font = '10.5px "IBM Plex Mono", ui-monospace, monospace';
+      g.textAlign = "left"; g.textBaseline = "middle";
+      g.fillText(z.tf + " " + z.side + " " + z.score + "/10" + (z.star ? " ★" : ""), pxR + 10, ly);
+      g.globalAlpha = 1;
+    });
+
+    // candles
+    var n = this.candles.length;
+    var slot = (pxR - pxL) / n;
+    var bw = Math.max(1.5, Math.min(7, slot * 0.62));
+    this.candles.forEach(function (k, i) {
+      var cx = pxL + slot * (i + 0.5);
+      var up = k.c >= k.o;
+      g.strokeStyle = up ? C.bull : C.bear;
+      g.fillStyle = up ? C.bull : C.bear;
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(Math.round(cx) + 0.5, y(k.h));
+      g.lineTo(Math.round(cx) + 0.5, y(k.l));
+      g.stroke();
+      var yo = y(k.o), yc = y(k.c);
+      g.fillRect(cx - bw / 2, Math.min(yo, yc), bw, Math.max(1.2, Math.abs(yc - yo)));
+    });
+
+    // last price
+    var px = this.candles[n - 1].c;
+    var yp = y(px);
+    g.strokeStyle = C.fg; g.globalAlpha = 0.5; g.lineWidth = 1;
+    g.setLineDash([2, 4]);
+    g.beginPath(); g.moveTo(pxL, yp); g.lineTo(pxR, yp); g.stroke();
+    g.setLineDash([]); g.globalAlpha = 1;
+
+    var lbl = fmtPx(px);
+    g.font = '600 10.5px "IBM Plex Mono", ui-monospace, monospace';
+    var tw = g.measureText(lbl).width + 9;
+    var ty = yp < padT + 14 ? yp + 13 : yp - 8;
+    g.fillStyle = C.surface; g.globalAlpha = 0.94;
+    g.fillRect(pxR - tw - 2, ty - 7, tw, 13);
+    g.globalAlpha = 1;
+    g.fillStyle = C.fg; g.textAlign = "right"; g.textBaseline = "middle";
+    g.fillText(lbl, pxR - 6, ty);
+  };
+
+  var CHARTS = [];
 
   // score breakdowns for the zones price is sitting in
   var BREAKDOWNS = {
@@ -1321,13 +1404,20 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
     // the instrument's whole zone stack, with price on it
     var mc = el("div", "minichart");
-    mc.innerHTML = miniChart(inst, z[1]);
+    var cv = document.createElement("canvas");
+    cv.setAttribute("role", "img");
+    cv.setAttribute("aria-label", inst + " candles with its live supply and demand zones");
+    mc.appendChild(cv);
     var cap = el("div", "cap");
+    cap.appendChild(el("span", "tick-dot", ""));
     cap.appendChild(el("span", null, mine.length + " live zone" + (mine.length === 1 ? "" : "s")));
     cap.appendChild(el("span", null, "·"));
     cap.appendChild(el("span", null, "highlighted: " + z[1] + " " + z[2]));
+    cap.appendChild(el("span", null, "·"));
+    cap.appendChild(el("span", null, "simulated ticks"));
     mc.appendChild(cap);
     main.appendChild(mc);
+    CHARTS.push(new LiveChart(cv, inst, z[1]));
 
     if (bd) {
       var b = el("div", "breakdown");
@@ -1478,6 +1568,34 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     });
   });
 
+  /* ── the tick loop ────────────────────────────────
+     Canvases have no width while the terminal is hidden, so drawing waits until the view is
+     shown. Ticking pauses when the view or the tab is hidden — nothing is gained by animating
+     a chart nobody is looking at. */
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ticker = null;
+
+  function drawAll() { CHARTS.forEach(function (c) { c.draw(); }); }
+
+  function startTicking() {
+    drawAll();
+    if (ticker || reduceMotion) return;
+    ticker = setInterval(function () {
+      if (document.hidden) return;
+      CHARTS.forEach(function (c) { c.simTick(); c.draw(); });
+    }, TICK_MS);
+  }
+
+  function stopTicking() {
+    if (ticker) { clearInterval(ticker); ticker = null; }
+  }
+
+  var resizeT = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(function () { if (!vTerm.hidden) drawAll(); }, 120);
+  });
+
   /* ── view routing ─────────────────────────────── */
   var vLand = document.getElementById("view-landing");
   var vTerm = document.getElementById("view-terminal");
@@ -1488,9 +1606,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     vTerm.hidden = !isTerm;
     if (isTerm) {
       window.scrollTo(0, 0);
-    } else if (h) {
-      var target = document.getElementById(h);
-      if (target) setTimeout(function () { target.scrollIntoView(); }, 0);
+      requestAnimationFrame(startTicking);
+    } else {
+      stopTicking();
+      if (h) {
+        var target = document.getElementById(h);
+        if (target) setTimeout(function () { target.scrollIntoView(); }, 0);
+      }
     }
   }
   window.addEventListener("hashchange", route);
