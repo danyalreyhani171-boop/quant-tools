@@ -5,7 +5,7 @@
 Multi-timeframe supply and demand zones, scored and self-invalidating. Weekly, daily, 4H and 1H
 zones built by one set of rules, graded out of ten, and marked where the timeframes agree.
 
-Subscription: £21.99/month.
+Subscription: £28.99/month.
 
 ---
 
