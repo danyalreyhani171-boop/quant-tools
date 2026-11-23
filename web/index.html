@@ -432,6 +432,168 @@ footer { background: var(--surface); }
 footer .wrap { padding-block: 32px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
 footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-faint); }
 
+/* ── member terminal ───────────────────────────── */
+.preview-banner {
+  background: var(--warn-soft);
+  border-bottom: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+}
+.preview-banner .wrap {
+  padding-block: 9px;
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  font-family: var(--f-mono); font-size: 11.5px; color: var(--warn);
+}
+.preview-banner a { color: var(--fg); }
+
+.term-head { border-bottom: 1px solid var(--line-soft); }
+.term-head .wrap { padding-block: 26px 20px; }
+.term-title { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.term-title h2 { font-size: 1.5rem; font-weight: 700; }
+.acct-pill {
+  margin-left: auto;
+  font-family: var(--f-mono); font-size: 11px;
+  padding: 4px 10px; border-radius: 2px;
+  color: var(--bull); background: var(--bull-soft);
+  border: 1px solid color-mix(in srgb, var(--bull) 30%, transparent);
+  white-space: nowrap;
+}
+
+/* gate strip */
+.gate-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+@media (max-width: 760px) { .gate-strip { grid-template-columns: 1fr; } }
+.gate-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: 13px 15px; display: grid; gap: 9px;
+}
+.gate-card.shut { border-color: color-mix(in srgb, var(--bear) 40%, var(--line)); }
+.gate-card-top { display: flex; align-items: baseline; gap: 8px; }
+.gate-card-top .p { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; }
+.gate-card-top .st {
+  margin-left: auto; font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.gate-card .big {
+  font-family: var(--f-mono); font-size: 27px; font-weight: 600;
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.gate-card .sub { font-family: var(--f-mono); font-size: 10.5px; color: var(--fg-faint); }
+
+/* terminal tabs */
+.term-tabs {
+  display: flex; gap: 0; overflow-x: auto; border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.term-tabs button {
+  font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 12px 16px; background: transparent;
+  border: 0; border-right: 1px solid var(--line); color: var(--fg-faint);
+  cursor: pointer; white-space: nowrap;
+}
+.term-tabs button[aria-selected="true"] {
+  color: var(--fg); background: var(--surface); box-shadow: inset 0 -2px 0 var(--accent);
+}
+.term-tabs .count {
+  display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 8px;
+  background: var(--accent-soft); color: var(--accent); font-size: 10px;
+}
+.term-body { padding-block: 26px; }
+
+/* detailed signal card */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+.scard {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; overflow: hidden; display: grid; align-content: start;
+}
+.scard.live { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.scard-head {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  padding: 11px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2);
+}
+.scard-head .p { font-family: var(--f-mono); font-size: 12.5px; font-weight: 600; }
+.scard-head .p span { color: var(--fg-faint); font-weight: 400; }
+.scard-main { padding: 14px; display: grid; gap: 13px; }
+.scard-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.metric .k {
+  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--fg-faint);
+}
+.metric .v {
+  font-family: var(--f-mono); font-size: 15px; font-weight: 500; margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.breakdown { display: grid; gap: 5px; border-top: 1px solid var(--line-soft); padding-top: 11px; }
+.bd-row {
+  display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline;
+  font-family: var(--f-mono); font-size: 11px;
+}
+.bd-row .mk { text-align: center; }
+.bd-yes .mk { color: var(--bull); }
+.bd-no .mk { color: var(--fg-faint); }
+.bd-no { color: var(--fg-faint); }
+.bd-row .pt { color: var(--accent); font-variant-numeric: tabular-nums; }
+.bd-no .pt { color: var(--fg-faint); }
+.scard-foot {
+  padding: 10px 14px; border-top: 1px solid var(--line-soft);
+  font-family: var(--f-mono); font-size: 10.5px; color: var(--fg-faint);
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+
+/* alerts config */
+.cfg { display: grid; gap: 16px; }
+.cfg-group {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: 18px; display: grid; gap: 13px;
+}
+.cfg-group h4 { font-size: 0.95rem; font-weight: 700; }
+.cfg-group > p { font-size: 13px; color: var(--fg-dim); }
+.toggle-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 0; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--f-mono); font-size: 12px;
+}
+.toggle-row:last-child { border-bottom: 0; }
+.toggle-row .lbl { flex: 1; min-width: 140px; }
+.toggle-row .meta { color: var(--fg-faint); font-size: 10.5px; }
+.sw {
+  width: 36px; height: 20px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface-2); position: relative; cursor: pointer; flex: none; padding: 0;
+}
+.sw::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--fg-faint); transition: left .15s, background .15s;
+}
+.sw[aria-pressed="true"] { background: var(--bull-soft); border-color: var(--bull); }
+.sw[aria-pressed="true"]::after { left: 18px; background: var(--bull); }
+@media (prefers-reduced-motion: reduce) { .sw::after { transition: none; } }
+.slider-row { display: grid; gap: 8px; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.chan { display: flex; gap: 8px; flex-wrap: wrap; }
+.chan button {
+  font-family: var(--f-mono); font-size: 11px; padding: 6px 12px;
+  border: 1px solid var(--line); background: transparent; color: var(--fg-dim);
+  border-radius: 2px; cursor: pointer;
+}
+.chan button[aria-pressed="true"] {
+  border-color: var(--accent); color: var(--accent); background: var(--accent-soft);
+}
+
+/* script cards */
+.code-block {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 3px;
+  padding: 12px 14px; overflow-x: auto; margin: 0;
+}
+.code-block code {
+  font-family: var(--f-mono); font-size: 11.5px; line-height: 1.6;
+  color: var(--fg-dim); white-space: pre;
+}
+.copy-btn {
+  font-family: var(--f-mono); font-size: 11px; padding: 6px 12px;
+  border: 1px solid var(--line); background: transparent; color: var(--fg);
+  border-radius: 2px; cursor: pointer;
+}
+.copy-btn:hover { background: var(--surface-2); }
+
 .theme-btn {
   background: transparent; border: 1px solid var(--line); color: var(--fg-dim);
   font-family: var(--f-mono); font-size: 11px; padding: 5px 9px; border-radius: 2px; cursor: pointer;
@@ -449,11 +611,13 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
       <a href="#gate">Correlation gate</a>
       <a href="#instruments">Instruments</a>
       <a href="#pricing">Pricing</a>
+      <a href="#terminal" style="color:var(--accent)">Member terminal</a>
     </nav>
     <button class="theme-btn" id="themeBtn" type="button">theme</button>
   </div>
 </header>
 
+<main id="view-landing">
 <div class="hero">
   <div class="wrap">
     <div class="hero-grid">
@@ -753,6 +917,7 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
           <div><span class="mk">+</span><span>Both indicators for your own charts</span></div>
         </div>
         <a class="btn btn-primary" href="#" style="margin-top:24px; width:100%; text-align:center">Subscribe</a>
+        <a class="btn btn-ghost" href="#terminal" style="margin-top:8px; width:100%; text-align:center">See the terminal first</a>
         <p class="price-note" style="margin-top:12px; text-align:center">Cancel anytime</p>
       </div>
 
@@ -789,6 +954,202 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
     </div>
   </div>
 </section>
+
+</main>
+
+<main id="view-terminal" hidden>
+  <div class="preview-banner">
+    <div class="wrap">
+      <span>◆ Preview of the member terminal — example data, not a live feed.</span>
+      <a href="#pricing">← back to the site</a>
+    </div>
+  </div>
+
+  <div class="term-head">
+    <div class="wrap">
+      <div class="term-title">
+        <h2>Terminal</h2>
+        <span class="eyebrow">3 pairs · 1H and 4H · evaluated on bar close</span>
+        <span class="acct-pill">Active · £47.99 · renews 23 Dec</span>
+      </div>
+      <div class="gate-strip" id="gateStrip"></div>
+    </div>
+  </div>
+
+  <div class="term-tabs" role="tablist" aria-label="Terminal sections">
+    <button role="tab" id="ttab-signals" aria-selected="true" data-t="signals">Live signals<span class="count">3</span></button>
+    <button role="tab" id="ttab-zones" aria-selected="false" data-t="zones">Active zones<span class="count">11</span></button>
+    <button role="tab" id="ttab-log" aria-selected="false" data-t="log">Signal log</button>
+    <button role="tab" id="ttab-alerts" aria-selected="false" data-t="alerts">Alerts</button>
+    <button role="tab" id="ttab-scripts" aria-selected="false" data-t="scripts">Indicators</button>
+  </div>
+
+  <div class="wrap term-body">
+    <div id="tp-signals" role="tabpanel" aria-labelledby="ttab-signals">
+      <div class="cards" id="streamCards"></div>
+      <p class="price-note" style="margin-top:16px">
+        Six streams — three pairs across both timeframes. A stream with the gate shut is shown rather
+        than hidden, so you can see <i>why</i> there is no signal instead of wondering.
+      </p>
+    </div>
+
+    <div id="tp-zones" role="tabpanel" aria-labelledby="ttab-zones" hidden>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>Instrument</th><th>TF</th><th>Side</th><th>Range</th><th>Score</th><th>Tests</th><th>Age</th><th>Confluence</th></tr>
+          </thead>
+          <tbody id="zoneRows"></tbody>
+        </table>
+      </div>
+      <p class="price-note" style="margin-top:14px">
+        Every live zone across all four timeframes. A zone leaves this table the moment it is
+        invalidated — nothing lingers after price has gone through it.
+      </p>
+    </div>
+
+    <div id="tp-log" role="tabpanel" aria-labelledby="ttab-log" hidden>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>Time (UTC)</th><th>Pair</th><th>TF</th><th>Signal</th><th>Score</th><th>Corr</th><th>Zone</th><th>What happened</th></tr>
+          </thead>
+          <tbody id="logRows"></tbody>
+        </table>
+      </div>
+      <div class="disclosure" style="margin-top:18px">
+        <h3>The log records market outcomes, not trade outcomes</h3>
+        <p>
+          "Zone held" and "zone broke" describe what price did at the level — not a profit or loss,
+          because entry, stop, target and size are yours. <strong>This log is the raw material for
+          performance statistics we have not published yet.</strong> Once there is enough out-of-sample
+          history, measured hit rates by pair, timeframe and score band go here, with costs included.
+          Until then nothing in this table should be read as a track record.
+        </p>
+      </div>
+    </div>
+
+    <div id="tp-alerts" role="tabpanel" aria-labelledby="ttab-alerts" hidden>
+      <div class="cfg">
+        <div class="cfg-group">
+          <h4>Which streams alert you</h4>
+          <p>Each pair and timeframe independently. Turn off what you don't trade.</p>
+          <div id="streamToggles"></div>
+        </div>
+
+        <div class="cfg-group">
+          <h4>Minimum score</h4>
+          <p>Nothing below this is sent. The engine's own floor is 5; raising it here cuts volume sharply.</p>
+          <div class="slider-row">
+            <input type="range" id="minScore" min="5" max="10" value="7" step="1" aria-label="Minimum score to alert">
+            <div class="toggle-row" style="border:0; padding:0">
+              <span class="lbl mono" id="minScoreOut">7/10 and above</span>
+              <span class="meta" id="minScoreEst"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cfg-group">
+          <h4>Confluence only</h4>
+          <div class="toggle-row">
+            <span class="lbl">Only alert when a divergence fires inside an agreeing zone
+              <span class="meta" style="display:block">The core setup. Cuts roughly three quarters of alerts.</span>
+            </span>
+            <button class="sw" type="button" id="swConfluence" aria-pressed="true" aria-label="Confluence only"></button>
+          </div>
+          <div class="toggle-row">
+            <span class="lbl">Also alert on first touch of a fresh zone
+              <span class="meta" style="display:block">Price reaching an untested zone, before any divergence</span>
+            </span>
+            <button class="sw" type="button" id="swFresh" aria-pressed="true" aria-label="Fresh zone touch"></button>
+          </div>
+        </div>
+
+        <div class="cfg-group">
+          <h4>Delivery</h4>
+          <p>Where alerts land. Webhook posts the full signal payload as JSON.</p>
+          <div class="chan" id="chanRow">
+            <button type="button" data-c="email" aria-pressed="true">Email</button>
+            <button type="button" data-c="telegram" aria-pressed="true">Telegram</button>
+            <button type="button" data-c="webhook" aria-pressed="false">Webhook</button>
+            <button type="button" data-c="browser" aria-pressed="false">Browser push</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tp-scripts" role="tabpanel" aria-labelledby="ttab-scripts" hidden>
+      <div class="cards">
+        <div class="scard">
+          <div class="scard-head">
+            <span class="p">smt-divergence.pine</span>
+            <span class="tf-chip">Pine v6</span>
+            <span class="verdict v-bull">Included</span>
+          </div>
+          <div class="scard-main">
+            <p style="font-size:13.5px; color:var(--fg-dim)">
+              SMT divergence across a correlated pair. Auto-pairs from the chart symbol, gates on
+              rolling return correlation, scores out of ten, and ships a status panel showing the live
+              correlation and whether the gate is open.
+            </p>
+            <pre class="code-block"><code>// Pair
+refSym  Reference symbol (blank = auto-pair)
+only14  Only run on 1H and 4H          [on]
+
+// Correlation gate
+cLen    Correlation lookback (bars)      60
+cMin    Reject signal below |r|        0.70
+cStr    Treat as strong above          0.85
+
+// Quality
+dMin    Minimum divergence (x ATR)     0.25
+minSc   Hide signals scoring below        5
+wantSw  Require a liquidity sweep      [on]</code></pre>
+          </div>
+          <div class="scard-foot">
+            <span>220 lines · non-repainting · alerts built in</span>
+            <button class="copy-btn" type="button" data-copy="smt" style="margin-left:auto">Copy install steps</button>
+          </div>
+        </div>
+
+        <div class="scard">
+          <div class="scard-head">
+            <span class="p">mtf-supply-demand.pine</span>
+            <span class="tf-chip">Pine v6</span>
+            <span class="verdict v-bull">Included</span>
+          </div>
+          <div class="scard-main">
+            <p style="font-size:13.5px; color:var(--fg-dim)">
+              Weekly, daily, 4H and 1H zones on one chart, each scored and marked where it nests inside
+              a higher-timeframe zone. Four invalidation rules, gap-aware so futures rolls don't
+              manufacture zones.
+            </p>
+            <pre class="code-block"><code>// Timeframes: show / max age
+onW/agW  Weekly                    [on]  52
+onD/agD  Daily                     [on] 120
+on4/ag4  4H                        [on]  60
+on1/ag1  1H                        [on] 120
+
+// Zone rules
+sdBase   Max base candles              6
+sdBody   Base body ≤ % of range      50%
+sdBH     Zone height ≤ x ATR        1.5
+sdDep    Move away ≥ x ATR          1.5
+sdTests  Remove after N tests          3</code></pre>
+          </div>
+          <div class="scard-foot">
+            <span>214 lines · non-repainting · ★ confluence marking</span>
+            <button class="copy-btn" type="button" data-copy="sd" style="margin-left:auto">Copy install steps</button>
+          </div>
+        </div>
+      </div>
+      <p class="price-note" style="margin-top:16px" id="copyNote">
+        Full source is delivered in the member area and runs on your own TradingView charts — so the
+        signals are on the chart you actually trade from, not only here.
+      </p>
+    </div>
+  </div>
+</main>
 
 <footer>
   <div class="wrap">
@@ -1200,5 +1561,339 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
   });
 
   zdraw("anatomy");
+
+  /* ── member terminal ──────────────────────────── */
+
+  // Six streams: three pairs across both timeframes. Example data.
+  var STREAMS = [
+    {
+      pair: "GBPUSD", ref: "EURUSD", tf: "4H", dir: "bull", score: 8, corr: 0.82,
+      strong: "GBPUSD", age: "2 bars ago", zone: "D demand 9/10 ★ in W", confluence: true,
+      bd: [
+        ["Valid divergence", true, 1, "GBPUSD higher low · EURUSD lower low"],
+        ["Divergence size", true, 2, "0.9 ATR — clears the 0.5 band"],
+        ["Correlation quality", true, 2, "0.82 — passes 0.70, under the 0.85 band"],
+        ["Liquidity sweep", true, 2, "prior low wicked, close back inside"],
+        ["4H timeframe", true, 1, "higher timeframe bonus"]
+      ]
+    },
+    {
+      pair: "GBPUSD", ref: "EURUSD", tf: "1H", dir: "bull", score: 6, corr: 0.82,
+      strong: "GBPUSD", age: "1 bar ago", zone: "1H demand 7/10 ★ in 4H", confluence: true,
+      bd: [
+        ["Valid divergence", true, 1, "same structure, lower timeframe"],
+        ["Divergence size", false, 1, "0.3 ATR — marginal"],
+        ["Correlation quality", true, 2, "0.82"],
+        ["Liquidity sweep", true, 2, "sweep confirmed"],
+        ["4H timeframe", false, 0, "1H — no bonus"]
+      ]
+    },
+    {
+      pair: "NQ1!", ref: "ES1!", tf: "4H", dir: "none", score: 0, corr: 0.51,
+      strong: null, age: "—", zone: "4H demand 6/10", confluence: false,
+      bd: [
+        ["Correlation gate", false, 0, "0.51 — below the 0.70 floor, stream suppressed"],
+        ["Divergence present", true, 0, "structure diverges, but not informatively"],
+        ["Reason", false, 0, "AI dispersion regime — NQ and ES on different drivers"]
+      ]
+    },
+    {
+      pair: "NQ1!", ref: "ES1!", tf: "1H", dir: "none", score: 0, corr: 0.49,
+      strong: null, age: "—", zone: "none in range", confluence: false,
+      bd: [
+        ["Correlation gate", false, 0, "0.49 — below the floor"],
+        ["Divergence present", true, 0, "multiple, all discarded"],
+        ["Reason", false, 0, "same regime, noisier at 1H"]
+      ]
+    },
+    {
+      pair: "XAUUSD", ref: "XAGUSD", tf: "4H", dir: "bear", score: 6, corr: 0.74,
+      strong: "XAGUSD", age: "5 bars ago", zone: "D supply 8/10", confluence: true,
+      bd: [
+        ["Valid divergence", true, 1, "XAUUSD higher high · XAGUSD lower high"],
+        ["Divergence size", true, 2, "0.6 ATR"],
+        ["Correlation quality", true, 2, "0.74 — below the 0.85 band this pair wants"],
+        ["Liquidity sweep", false, 0, "no sweep — high not given back by the close"],
+        ["4H timeframe", true, 1, "higher timeframe bonus"]
+      ]
+    },
+    {
+      pair: "XAUUSD", ref: "XAGUSD", tf: "1H", dir: "none", score: 0, corr: 0.74,
+      strong: null, age: "—", zone: "1H demand 5/10", confluence: false,
+      bd: [
+        ["Correlation gate", true, 0, "0.74 — gate open"],
+        ["Divergence present", false, 0, "both made the same low — confirmation, not divergence"],
+        ["Reason", true, 0, "engine silent and waiting, which is the correct state"]
+      ]
+    }
+  ];
+
+  var PAIRS = [
+    { pair: "GBPUSD / EURUSD", corr: 0.82, open: true,  note: "primary pair · mean 60d 0.79" },
+    { pair: "NQ1! / ES1!",     corr: 0.51, open: false, note: "decoupled · AI dispersion" },
+    { pair: "XAUUSD / XAGUSD", corr: 0.74, open: true,  note: "open, but under the 0.85 band" }
+  ];
+
+  var ZONES = [
+    ["GBPUSD", "W",  "demand", "1.2810 – 1.2944", 7,  0, "14w", ""],
+    ["GBPUSD", "D",  "demand", "1.2968 – 1.3024", 9,  1, "6d",  "★ in W"],
+    ["GBPUSD", "4H", "demand", "1.2991 – 1.3016", 8,  0, "11h", "★ in D"],
+    ["GBPUSD", "4H", "supply", "1.3140 – 1.3178", 6,  2, "3d",  ""],
+    ["GBPUSD", "1H", "demand", "1.3002 – 1.3014", 7,  0, "4h",  "★ in 4H"],
+    ["NQ1!",   "D",  "supply", "26,120 – 26,480", 8,  1, "4d",  ""],
+    ["NQ1!",   "4H", "demand", "24,610 – 24,980", 6,  0, "19h", ""],
+    ["XAUUSD", "W",  "supply", "3,712 – 3,801",   7,  1, "9w",  ""],
+    ["XAUUSD", "D",  "supply", "3,642 – 3,689",   8,  2, "5d",  "★ in W"],
+    ["XAUUSD", "4H", "supply", "3,655 – 3,674",   7,  0, "16h", "★ in D"],
+    ["XAUUSD", "1H", "demand", "3,588 – 3,601",   5,  0, "7h",  ""]
+  ];
+
+  var LOG = [
+    ["22 Nov 16:00", "GBPUSD", "4H", "bull", 8, 0.82, "D demand ★", "open"],
+    ["22 Nov 13:00", "GBPUSD", "1H", "bull", 6, 0.82, "1H demand ★", "open"],
+    ["22 Nov 08:00", "XAUUSD", "4H", "bear", 6, 0.74, "D supply", "open"],
+    ["21 Nov 20:00", "GBPUSD", "1H", "bull", 7, 0.80, "4H demand ★", "zone held"],
+    ["21 Nov 12:00", "XAUUSD", "4H", "bear", 7, 0.77, "W supply", "zone held"],
+    ["20 Nov 16:00", "NQ1!",   "4H", "bear", 8, 0.71, "D supply ★", "zone broke"],
+    ["20 Nov 09:00", "GBPUSD", "4H", "bear", 6, 0.84, "4H supply", "zone held"],
+    ["19 Nov 17:00", "XAUUSD", "1H", "bull", 5, 0.88, "1H demand", "expired"],
+    ["19 Nov 11:00", "GBPUSD", "1H", "bull", 8, 0.86, "D demand ★", "zone held"],
+    ["18 Nov 14:00", "NQ1!",   "1H", "bear", 6, 0.73, "4H supply", "zone broke"]
+  ];
+
+  function dirLabel(d) {
+    return d === "bull" ? "Bullish SMT" : d === "bear" ? "Bearish SMT" : "No signal";
+  }
+  function dirClass(d) {
+    return d === "bull" ? "v-bull" : d === "bear" ? "v-bear" : "v-none";
+  }
+  function dirColor(d) {
+    return d === "bull" ? "var(--bull)" : d === "bear" ? "var(--bear)" : "var(--fg-faint)";
+  }
+
+  /* gate strip */
+  var gs = document.getElementById("gateStrip");
+  PAIRS.forEach(function (p) {
+    var c = el("div", "gate-card" + (p.open ? "" : " shut"));
+    var top = el("div", "gate-card-top");
+    top.appendChild(el("span", "p", p.pair));
+    var st = el("span", "st", p.open ? "gate open" : "gate shut");
+    st.style.color = p.open ? "var(--bull)" : "var(--bear)";
+    top.appendChild(st);
+    c.appendChild(top);
+    var big = el("div", "big", p.corr.toFixed(2));
+    big.style.color = corrColor(p.corr);
+    c.appendChild(big);
+    c.appendChild(el("div", "sub", p.note));
+    gs.appendChild(c);
+  });
+
+  /* stream cards */
+  var sc = document.getElementById("streamCards");
+  STREAMS.forEach(function (s) {
+    var card = el("div", "scard" + (s.dir !== "none" ? " live" : ""));
+
+    var head = el("div", "scard-head");
+    var nm = el("span", "p");
+    nm.appendChild(document.createTextNode(s.pair));
+    nm.appendChild(el("span", null, " / " + s.ref));
+    head.appendChild(nm);
+    head.appendChild(el("span", "tf-chip", s.tf));
+    head.appendChild(el("span", "verdict " + dirClass(s.dir), dirLabel(s.dir)));
+    card.appendChild(head);
+
+    var main = el("div", "scard-main");
+    var mets = el("div", "scard-metrics");
+    [
+      ["score", s.score > 0 ? s.score + "/10" : "—", dirColor(s.dir)],
+      ["correlation", s.corr.toFixed(2), corrColor(s.corr)],
+      ["strong side", s.strong || "—", "var(--fg)"]
+    ].forEach(function (m) {
+      var d = el("div", "metric");
+      d.appendChild(el("div", "k", m[0]));
+      var v = el("div", "v", m[1]);
+      v.style.color = m[2];
+      d.appendChild(v);
+      mets.appendChild(d);
+    });
+    main.appendChild(mets);
+
+    var bd = el("div", "breakdown");
+    s.bd.forEach(function (r) {
+      var row = el("div", "bd-row " + (r[1] ? "bd-yes" : "bd-no"));
+      row.appendChild(el("span", "mk", r[1] ? "✓" : "·"));
+      var t = el("span");
+      t.appendChild(document.createTextNode(r[0]));
+      t.appendChild(el("span", null, " — " + r[3]));
+      t.lastChild.style.color = "var(--fg-faint)";
+      row.appendChild(t);
+      row.appendChild(el("span", "pt", r[2] > 0 ? "+" + r[2] : "0"));
+      bd.appendChild(row);
+    });
+    main.appendChild(bd);
+    card.appendChild(main);
+
+    var foot = el("div", "scard-foot");
+    foot.appendChild(el("span", null, "zone: " + s.zone));
+    foot.appendChild(el("span", null, "·"));
+    foot.appendChild(el("span", null, s.age));
+    if (s.confluence && s.dir !== "none") {
+      foot.appendChild(el("span", "confluence-flag", "◆ confluence"));
+    }
+    card.appendChild(foot);
+
+    sc.appendChild(card);
+  });
+
+  /* zone rows */
+  var zr = document.getElementById("zoneRows");
+  ZONES.forEach(function (z) {
+    var tr = document.createElement("tr");
+    function td(txt, cls) { var d = el("td", cls || null, txt); tr.appendChild(d); return d; }
+    td(z[0], "n");
+    td(z[1], "n");
+    var sideTd = el("td");
+    sideTd.appendChild(el("span", "zone-pill zp-" + z[2], z[2]));
+    tr.appendChild(sideTd);
+    td(z[3], "n");
+    var scoreTd = td(z[4] + "/10", "n");
+    scoreTd.style.color = z[4] >= 8 ? "var(--bull)" : z[4] >= 6 ? "var(--fg)" : "var(--fg-dim)";
+    td(z[5] + " / 3", "n");
+    td(z[6], "n");
+    var cf = td("", "n");
+    if (z[7]) { cf.appendChild(el("span", "star", z[7])); } else { cf.textContent = "—"; }
+    zr.appendChild(tr);
+  });
+
+  /* log rows */
+  var lr = document.getElementById("logRows");
+  LOG.forEach(function (r) {
+    var tr = document.createElement("tr");
+    function td(txt, cls) { var d = el("td", cls || null, txt); tr.appendChild(d); return d; }
+    td(r[0], "n");
+    td(r[1], "n");
+    td(r[2], "n");
+    var sig = el("td");
+    sig.appendChild(el("span", "verdict " + dirClass(r[3]), r[3] === "bull" ? "Bullish" : "Bearish"));
+    tr.appendChild(sig);
+    td(r[4] + "/10", "n");
+    var cTd = td(r[5].toFixed(2), "n");
+    cTd.style.color = corrColor(r[5]);
+    td(r[6], "n");
+    var stTd = td(r[7]);
+    stTd.style.color = r[7] === "open" ? "var(--accent)"
+      : r[7] === "zone held" ? "var(--bull)"
+      : r[7] === "zone broke" ? "var(--bear)" : "var(--fg-faint)";
+    lr.appendChild(tr);
+  });
+
+  /* alert stream toggles */
+  var stg = document.getElementById("streamToggles");
+  [
+    ["GBPUSD / EURUSD", "4H", true], ["GBPUSD / EURUSD", "1H", true],
+    ["NQ1! / ES1!", "4H", true],     ["NQ1! / ES1!", "1H", false],
+    ["XAUUSD / XAGUSD", "4H", true], ["XAUUSD / XAGUSD", "1H", false]
+  ].forEach(function (t, i) {
+    var row = el("div", "toggle-row");
+    var l = el("span", "lbl mono", t[0] + "  ");
+    l.appendChild(el("span", "tf-chip", t[1]));
+    row.appendChild(l);
+    var b = el("button", "sw");
+    b.type = "button";
+    b.id = "sw-stream-" + i;
+    b.setAttribute("aria-pressed", String(t[2]));
+    b.setAttribute("aria-label", t[0] + " " + t[1]);
+    row.appendChild(b);
+    stg.appendChild(row);
+  });
+
+  // every switch on the page toggles the same way
+  document.querySelectorAll(".sw").forEach(function (b) {
+    b.addEventListener("click", function () {
+      b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    });
+  });
+
+  document.querySelectorAll("#chanRow button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    });
+  });
+
+  var ms = document.getElementById("minScore");
+  var msOut = document.getElementById("minScoreOut");
+  var msEst = document.getElementById("minScoreEst");
+  function msUpdate() {
+    var v = Number(ms.value);
+    msOut.textContent = v + "/10 and above";
+    msEst.textContent = v <= 5 ? "every qualifying signal"
+      : v <= 6 ? "most signals"
+      : v <= 7 ? "the clean ones"
+      : v <= 8 ? "sweep plus strong correlation"
+      : "near-perfect setups only — expect long quiet spells";
+  }
+  ms.addEventListener("input", msUpdate);
+  msUpdate();
+
+  /* copy buttons — downloads don't work inside this frame, so copy instead */
+  var INSTALL = {
+    smt: "DRQuantMTF — SMT Divergence install\n\n" +
+         "1. TradingView > Pine Editor > new indicator\n" +
+         "2. Paste smt-divergence.pine, Save, Add to chart\n" +
+         "3. Set the chart to 1H or 4H\n" +
+         "4. Leave 'Reference symbol' blank for the three shipped pairs\n" +
+         "5. Create an alert: condition 'DRQuant SMT', Any alert() function call\n\n" +
+         "The status panel top-right shows the resolved pair, live correlation and gate state.",
+    sd:  "DRQuantMTF — MTF Supply & Demand install\n\n" +
+         "1. TradingView > Pine Editor > new indicator\n" +
+         "2. Paste mtf-supply-demand.pine, Save, Add to chart\n" +
+         "3. On futures charts enable back-adjustment (B-ADJ) so rolls don't create false zones\n" +
+         "4. Create an alert: condition 'MTF S&D', Any alert() function call\n\n" +
+         "Zones show only on charts at or below their own timeframe."
+  };
+  var copyNote = document.getElementById("copyNote");
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var txt = INSTALL[b.dataset.copy];
+      var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy install steps"; }, 1800); };
+      try {
+        navigator.clipboard.writeText(txt).then(done, function () {
+          copyNote.textContent = "Clipboard blocked here — the install steps ship with the scripts in the member area.";
+        });
+      } catch (e) {
+        copyNote.textContent = "Clipboard blocked here — the install steps ship with the scripts in the member area.";
+      }
+    });
+  });
+
+  /* terminal tabs */
+  var ttabs = Array.prototype.slice.call(document.querySelectorAll(".term-tabs button"));
+  ttabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      ttabs.forEach(function (o) {
+        var on = o === t;
+        o.setAttribute("aria-selected", String(on));
+        document.getElementById("tp-" + o.dataset.t).hidden = !on;
+      });
+    });
+  });
+
+  /* view routing: #terminal is the member view, everything else is the site */
+  var vLand = document.getElementById("view-landing");
+  var vTerm = document.getElementById("view-terminal");
+  function route() {
+    var h = (location.hash || "").replace(/^#/, "");
+    var isTerm = h === "terminal";
+    vLand.hidden = isTerm;
+    vTerm.hidden = !isTerm;
+    if (isTerm) {
+      window.scrollTo(0, 0);
+    } else if (h) {
+      var target = document.getElementById(h);
+      if (target) setTimeout(function () { target.scrollIntoView(); }, 0);
+    }
+  }
+  window.addEventListener("hashchange", route);
+  route();
 })();
 </script>
