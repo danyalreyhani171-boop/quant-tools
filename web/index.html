@@ -914,6 +914,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   // last close per instrument, so each diagram can place price against its own zones
   var PRICES = { "XAUUSD": 3661.40, "GBPUSD": 1.30190, "NQ1!": 26872.50, "CL1!": 83.40 };
 
+  // recent closes, oldest first, ending on the current price — the line drawn through
+  // the zones. GBPUSD is read off the live 4H chart; the rest match their example levels.
+  var PATHS = {
+    "GBPUSD": [1.3505, 1.3470, 1.3400, 1.3365, 1.3420, 1.3450, 1.3430, 1.3340,
+               1.3300, 1.3255, 1.3225, 1.3195, 1.3205, 1.3150, 1.3110, 1.3140, 1.30190],
+    "XAUUSD": [3745, 3760, 3780, 3795, 3770, 3740, 3700, 3680,
+               3665, 3650, 3640, 3655, 3670, 3685, 3672, 3658, 3661.40],
+    "NQ1!":   [27350, 27420, 27300, 27150, 26980, 26820, 26650, 26480,
+               26560, 26700, 26880, 27050, 26960, 26810, 26740, 26830, 26872.50],
+    "CL1!":   [85.9, 86.2, 85.6, 84.9, 84.3, 83.8, 84.1, 84.6,
+               84.2, 83.6, 83.1, 82.9, 83.3, 83.7, 83.5, 83.2, 83.40]
+  };
+
   function zRange(s) {
     var p = s.split("–").map(function (x) {
       return parseFloat(x.replace(/,/g, "").trim());
@@ -936,7 +949,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     if (!mine.length) return "";
 
     var px = PRICES[inst];
-    var vals = [px];
+    var path = PATHS[inst] || [];
+    var vals = [px].concat(path);
     mine.forEach(function (z) {
       var r = zRange(z[3]);
       vals.push(r.lo, r.hi);
@@ -997,15 +1011,30 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
            '" opacity="' + (it.focus ? 1 : 0.7) + '">' + it.txt + '</text>';
     });
 
-    // last close, drawn over the bands
+    // the price line through the zones, then the level it closed at
     var yp = y(px);
+    if (path.length > 1) {
+      var step = (xR - xL) / (path.length - 1);
+      var d = path.map(function (v, k) {
+        return (k === 0 ? "M" : "L") + (xL + k * step).toFixed(1) + " " + y(v).toFixed(1);
+      }).join(" ");
+      s += '<path d="' + d + '" fill="none" stroke="var(--fg)" stroke-width="1.9" ' +
+           'stroke-linejoin="round" stroke-linecap="round"/>';
+    }
     s += '<line x1="' + xL + '" y1="' + yp.toFixed(1) + '" x2="' + xR + '" y2="' + yp.toFixed(1) +
-         '" stroke="var(--fg)" stroke-width="1.2" stroke-dasharray="3 3"/>';
-    s += '<circle cx="' + (xL + 6) + '" cy="' + yp.toFixed(1) + '" r="3.2" fill="var(--fg)"/>';
-    var lift = yp < mT + 14 ? 14 : -7;
-    s += '<text x="' + (xL + 14) + '" y="' + (yp + lift).toFixed(1) +
-         '" font-family="IBM Plex Mono, monospace" font-size="10.5" font-weight="500" ' +
-         'fill="var(--fg)">' + fmtPx(px) + '</text>';
+         '" stroke="var(--fg)" stroke-width="1" stroke-dasharray="2 4" opacity="0.55"/>';
+    s += '<circle cx="' + xR + '" cy="' + yp.toFixed(1) + '" r="3.4" fill="var(--fg)"/>';
+
+    // the label sits over the line and the bands, so it gets its own backing
+    var lift = yp < mT + 16 ? 14 : -8;
+    var lbl = fmtPx(px);
+    var ty = yp + lift;
+    var tw = lbl.length * 6.4 + 9;
+    s += '<rect x="' + (xR - 2 - tw).toFixed(1) + '" y="' + (ty - 9.5).toFixed(1) +
+         '" width="' + tw.toFixed(1) + '" height="13" rx="2" fill="var(--surface)" opacity="0.94"/>';
+    s += '<text x="' + (xR - 6) + '" y="' + ty.toFixed(1) +
+         '" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10.5" ' +
+         'font-weight="500" fill="var(--fg)">' + lbl + '</text>';
 
     s += '</svg>';
     return s;
