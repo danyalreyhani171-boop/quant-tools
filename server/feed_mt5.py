@@ -31,12 +31,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.sd import Bar  # noqa: E402
 
-# our name -> the broker's name. Check these against print_symbols() before relying on them.
+# Vantage. XAUUSD, GBPUSD and USOUSD are confirmed from Vantage's own documentation;
+# USOUSD is their "WTI Crude Oil Cash". NAS100 is the usual name but is NOT confirmed for
+# Vantage — run `python3 server/feed_mt5.py NAS` and correct it if the lister disagrees.
+#
+# Some Vantage account types suffix every symbol (XAUUSD+, NAS100+ and so on). The lister
+# shows what yours actually uses.
 SYMBOLS = {
     "XAUUSD": "XAUUSD",
     "GBPUSD": "GBPUSD",
-    "NQ1!":   "NAS100",   # CFD — no expiry, no rolls, no CME licence
-    "CL1!":   "USOIL",    # CFD
+    "NQ1!":   "NAS100",    # CFD — unconfirmed on Vantage, verify
+    "CL1!":   "USOUSD",    # CFD — Vantage's WTI Crude Oil Cash
+}
+
+# Names other brokers use, so the lister can suggest a match if the above misses.
+ALIASES = {
+    "NQ1!": ["NAS100", "USTEC", "US100", "NDX100", "NASDAQ", "USTECH"],
+    "CL1!": ["USOUSD", "USOIL", "WTI", "XTIUSD", "CRUDE", "OILUSD"],
+    "XAUUSD": ["XAUUSD", "GOLD"],
+    "GBPUSD": ["GBPUSD"],
 }
 
 
@@ -120,23 +133,72 @@ class MT5Feed:
         return out
 
 
+def resolve(feed: "MT5Feed") -> dict[str, str]:
+    """
+    Work out what this broker calls each of our four instruments.
+
+    Matches the alias list against the account's symbol list, preferring an exact hit and
+    otherwise the shortest name that contains an alias — which picks XAUUSD over XAUUSD.raw
+    and NAS100 over NAS100-DEC25.
+    """
+    available = [s.name for s in feed._mt5.symbols_get()]
+    upper = {s.upper(): s for s in available}
+    found: dict[str, str] = {}
+    for ours, names in ALIASES.items():
+        hit = None
+        for alias in names:
+            if alias.upper() in upper:
+                hit = upper[alias.upper()]
+                break
+        if hit is None:
+            cands = [s for s in available
+                     if any(a.upper() in s.upper() for a in names)]
+            hit = min(cands, key=len) if cands else None
+        if hit:
+            found[ours] = hit
+    return found
+
+
 if __name__ == "__main__":
-    # python3 server/feed_mt5.py            list every symbol
-    # python3 server/feed_mt5.py NAS         filter
+    # python3 server/feed_mt5.py          resolve symbols, read the offset, pull a few bars
+    # python3 server/feed_mt5.py NAS      just list symbols matching NAS
     feed = MT5Feed()
     try:
-        needle = sys.argv[1] if len(sys.argv) > 1 else ""
-        print(f"symbols matching {needle!r}:")
-        feed.print_symbols(needle)
+        if len(sys.argv) > 1:
+            print(f"symbols matching {sys.argv[1]!r}:")
+            feed.print_symbols(sys.argv[1])
+            raise SystemExit(0)
+
+        print("resolving symbols on this account\n")
+        found = resolve(feed)
+        for ours in ALIASES:
+            got = found.get(ours)
+            flag = "" if got else "   <-- NOT FOUND, run with a search term"
+            print(f"  {ours:<8} -> {got or '?':<16}{flag}")
+
+        print("\npaste into SYMBOLS:")
+        print("SYMBOLS = {")
+        for ours in ALIASES:
+            print(f'    {ours!r:<10}: {found.get(ours, "?")!r},')
+        print("}")
+
         off = feed.detect_session_offset()
-        print(f"\nsession offset: {off} s  ({off // 3600:+d}h)")
-        print(f"pass this as Params(session_offset={off})")
-        for name in SYMBOLS:
+        print(f"\nsession offset: {off} s ({off // 3600:+d}h)  ->  Params(session_offset={off})")
+        print("re-check this after every DST change, or D and W zones drift\n")
+
+        feed.symbols = {**feed.symbols, **found}
+        for ours in ALIASES:
+            if ours not in found:
+                continue
             try:
-                b = feed.bars(name, count=200)
-                print(f"  {name:<8} {len(b):>4} H1 bars, last close {b[-1].close}" if b
-                      else f"  {name:<8} no bars")
+                b = feed.bars(ours, count=300)
+                if b:
+                    span = (b[-1].time - b[0].time) / 86400
+                    print(f"  {ours:<8} {len(b):>4} H1 bars over {span:.0f}d, "
+                          f"last close {b[-1].close}")
+                else:
+                    print(f"  {ours:<8} no bars returned")
             except RuntimeError as e:
-                print(f"  {name:<8} {e}")
+                print(f"  {ours:<8} {e}")
     finally:
         feed.close()
