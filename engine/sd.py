@@ -49,6 +49,7 @@ class Params:
     sd_tests: int = 3           # sdTests — remove after N tests
     no_gap: bool = True         # noGap
     z_max: int = 3              # zMax    — zones per side
+    fixed: bool = True          # the v2 corrections; set False to reproduce v1 behaviour
     age_w: int = 52
     age_d: int = 120
     age_4h: int = 60
@@ -192,6 +193,8 @@ def detect(bars: list[Bar], mb: int, cap: float, p: Params) -> list[ZoneEvent]:
     atr = atr_series(bars, 14)
     sh: Optional[float] = None   # last confirmed pivot high
     sl: Optional[float] = None   # last confirmed pivot low
+    sh_i: int = -1               # the bar it sits on (fixed mode only)
+    sl_i: int = -1
     last_zone_time: Optional[int] = None
 
     def at(k: int, i: int) -> Optional[Bar]:
@@ -208,9 +211,9 @@ def detect(bars: list[Bar], mb: int, cap: float, p: Params) -> list[ZoneEvent]:
         ph = pivot_high(bars, i)
         pl = pivot_low(bars, i)
         if ph is not None:
-            sh = ph
+            sh, sh_i = ph, i - 2
         if pl is not None:
-            sl = pl
+            sl, sl_i = pl, i - 2
 
         up = b.up
         prev = at(1, i)
@@ -237,24 +240,30 @@ def detect(bars: list[Bar], mb: int, cap: float, p: Params) -> list[ZoneEvent]:
                 break
 
         # the base: small-bodied candles immediately behind the leg
+        #
+        # The original expands across every qualifying candle up to mb and only checks the
+        # height cap once, at the end. A base that was valid at two candles is therefore
+        # thrown away because the scan kept going and blew the cap. In fixed mode the scan
+        # stops at the last candle that still fits, keeping the tight zone.
         nb = 0
         hi = lo = bh = bl = 0.0
         for k in range(leg, leg + mb):
             bk = at(k, i)
             if bk is None:
                 break
-            if bk.body <= p.sd_body / 100.0 * bk.range or bk.body <= 0.25 * a:
-                nb += 1
-                if nb == 1:
-                    hi, lo = bk.high, bk.low
-                    bh, bl = max(bk.open, bk.close), min(bk.open, bk.close)
-                else:
-                    hi = max(hi, bk.high)
-                    lo = min(lo, bk.low)
-                    bh = max(bh, bk.open, bk.close)
-                    bl = min(bl, bk.open, bk.close)
-            else:
+            if not (bk.body <= p.sd_body / 100.0 * bk.range or bk.body <= 0.25 * a):
                 break
+            n_hi = bk.high if nb == 0 else max(hi, bk.high)
+            n_lo = bk.low if nb == 0 else min(lo, bk.low)
+            if p.fixed and nb > 0 and (n_hi - n_lo) > cap * a:
+                break
+            nb += 1
+            hi, lo = n_hi, n_lo
+            if nb == 1:
+                bh, bl = max(bk.open, bk.close), min(bk.open, bk.close)
+            else:
+                bh = max(bh, bk.open, bk.close)
+                bl = min(bl, bk.open, bk.close)
 
         # fallback: no small base, but the candle behind the leg is opposite-coloured
         if nb == 0:
@@ -283,9 +292,15 @@ def detect(bars: list[Bar], mb: int, cap: float, p: Params) -> list[ZoneEvent]:
 
         # break of structure against the last confirmed pivot
         # PINE-NOTE: `close > na` is falsey in Pine, so no pivot means no BOS point.
-        bos = (b.close > sh) if (up and sh is not None) else (
-            (b.close < sl) if ((not up) and sl is not None) else False
-        )
+        #
+        # Pivots confirm two bars late, so the "prior swing" can be one the impulse leg
+        # made itself — the leg then scores for breaking structure it just created. In
+        # fixed mode the pivot has to predate the base.
+        oldest_i = i - (leg + nb - 1)
+        if up:
+            bos = sh is not None and b.close > sh and (not p.fixed or sh_i < oldest_i)
+        else:
+            bos = sl is not None and b.close < sl and (not p.fixed or sl_i < oldest_i)
 
         # fair value gap anywhere inside the departure leg
         fvg = False
@@ -297,8 +312,16 @@ def detect(bars: list[Bar], mb: int, cap: float, p: Params) -> list[ZoneEvent]:
             if (bk.low > bk2.high) if up else (bk.high < bk2.low):
                 fvg = True
 
-        dep_pts = 3 if dep >= 2.5 * a else (2 if dep >= 2.0 * a else 1)
-        base_pts = 2 if nb <= 3 else 1
+        if p.fixed:
+            # Score against the gate this zone actually had to clear, so the bands keep
+            # discriminating when sdDep is changed, and scale the base threshold to the
+            # timeframe's own cap, so W and D can't collect a free +2.
+            gate = max(2.0 * height, p.sd_dep * a)
+            dep_pts = 3 if dep >= 1.667 * gate else (2 if dep >= 1.333 * gate else 1)
+            base_pts = 2 if nb <= max(1, (mb + 1) // 2) else 1   # W→1, D→2, 4H/1H→3
+        else:
+            dep_pts = 3 if dep >= 2.5 * a else (2 if dep >= 2.0 * a else 1)
+            base_pts = 2 if nb <= 3 else 1
         score = dep_pts + base_pts + (2 if bos else 0) + (1 if fvg else 0)
 
         wick_body = p.sd_edge == "Wick-Body"
@@ -404,7 +427,8 @@ class ZoneBook:
             reason = ""
             if z.age <= 2 and (close < z.top if z.bull else close > z.bot):
                 reason = "no-follow-through"
-            elif z.age > self.p.max_age(tf):
+            elif z.age > self.p.max_age(tf) - (1 if self.p.fixed else 0):
+                # the original dies at cap + 1, so a zone outlives its setting by a bar
                 reason = "age"
             elif (close < z.bot) if z.bull else (close > z.top):
                 reason = "far-edge-close"
@@ -502,8 +526,12 @@ def run(
                 if tf in (1, 2):
                     book.cascade(tf - 1, closed.close)
 
-                if enabled[tf]:
+                # Maintenance runs whether or not the timeframe is switched on. The
+                # original has it inside the toggle, so turning a timeframe off mid-session
+                # freezes its zones: they stop ageing, stop counting tests and never die.
+                if enabled[tf] or p.fixed:
                     book.update(tf, closed.high, closed.low, closed.close)
+                if enabled[tf]:
                     ev = by_time[tf].get(closed.time)
                     if ev is not None:
                         book.add(tf, ev, i)

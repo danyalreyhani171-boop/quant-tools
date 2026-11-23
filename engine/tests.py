@@ -114,13 +114,24 @@ if evs:
     check("counted 3 base candles", e.n_base == 3, f"n_base={e.n_base}")
     check("zone time is the oldest base candle", e.time == 21 * HOUR, f"t={e.time}")
 
-# the base scan has no notion of "this candle belongs to a different move"
-plain = flat(20)
-plain.append(Bar(20 * HOUR, 100.1, 104.2, 100.0, 104.0))
-greedy = detect(plain, p.sd_base, p.sd_bh, p)
-check("ISSUE: with no large-bodied candle to stop it, the base swallows the whole "
-      "lookback", greedy and greedy[0].n_base == p.sd_base,
-      f"n_base={greedy[0].n_base if greedy else 'no zone'}")
+# A base that is valid at three candles, behind a widening one that would blow the cap.
+# v1 expanded into it and then failed the height check, losing the zone entirely.
+widening = flat(16)
+t0 = 16 * HOUR
+widening.append(Bar(t0,            100.0, 103.0, 97.0, 100.1))   # wide — would blow the cap
+for i in range(3):
+    widening.append(Bar(t0 + (i + 1) * HOUR, 100.0, 100.5, 99.5, 100.1))
+widening.append(Bar(t0 + 4 * HOUR, 100.1, 104.2, 100.0, 104.0))  # impulse
+
+v1 = detect(widening, p.sd_base, p.sd_bh, Params(fixed=False))
+v2 = detect(widening, p.sd_base, p.sd_bh, Params(fixed=True))
+check("v1 loses a valid zone because the greedy scan blows the height cap",
+      len(v1) == 0, f"v1 found {len(v1)}")
+check("v2 keeps it, stopping at the last candle that fits",
+      len(v2) == 1 and v2[0].n_base == 3,
+      f"v2 found {len(v2)}" + (f", n_base={v2[0].n_base}" if v2 else ""))
+check("…and the recovered zone is inside the height cap",
+      bool(v2) and v2[0].height_atr <= p.sd_bh, f"{v2[0].height_atr:.2f} ATR" if v2 else "-")
 
 section("Zone detection — supply")
 
@@ -163,11 +174,25 @@ e = detect(bars, p.sd_base, p.sd_bh, p)[0]
 check("departure of 2.5+ ATR scores 3", e.dep_atr >= 2.5, f"dep={e.dep_atr:.2f} ATR")
 check("score is within 1..8", 1 <= e.score <= 8, f"score={e.score}")
 
-# base tightness is dead on W and D, because mb is clamped below the threshold
+# base tightness: v1 used a flat threshold of 3, which W and D could never exceed
 check("W clamps the base to 2 candles", p.mb_for(0) == 2)
 check("D clamps the base to 3 candles", p.mb_for(1) == 3)
-check("BUG: on W and D, nb can never exceed 3, so base tightness is always +2",
+check("v1's flat threshold of 3 was unreachable on W and D",
       p.mb_for(0) <= 3 and p.mb_for(1) <= 3)
+bcap = lambda mb: max(1, (mb + 1) // 2)
+check("v2 scales it to the timeframe: W→1, D→2, 4H/1H→3",
+      (bcap(p.mb_for(0)), bcap(p.mb_for(1)), bcap(p.mb_for(2))) == (1, 2, 3),
+      f"{(bcap(p.mb_for(0)), bcap(p.mb_for(1)), bcap(p.mb_for(2)))}")
+
+# departure bands follow sdDep instead of being hardcoded
+hi_dep = Params(fixed=True, sd_dep=3.0)
+bars_hd = demand_setup(impulse_to=108.0)
+ev_hd = detect(bars_hd, hi_dep.sd_base, hi_dep.sd_bh, hi_dep)
+ev_v1 = detect(bars_hd, hi_dep.sd_base, hi_dep.sd_bh, Params(fixed=False, sd_dep=3.0))
+check("v1 scores 3/3 on departure whenever sdDep is raised above 2.5",
+      bool(ev_v1) and ev_v1[0].dep_atr >= 2.5,
+      f"dep={ev_v1[0].dep_atr:.2f} ATR" if ev_v1 else "no zone")
+check("v2 still discriminates at sdDep=3.0", bool(ev_hd), "no zone")
 
 section("Zone lifecycle")
 

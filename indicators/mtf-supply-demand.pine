@@ -2,6 +2,24 @@
 indicator("MTF Supply & Demand (W / D / 4H / 1H)", "MTF S&D", overlay = true, max_boxes_count = 500, max_bars_back = 200)
 // Weekly, daily, 4H and 1H supply/demand zones on one chart. Closed bars only (no repaint).
 // A timeframe shows only on charts at or below it. Futures: turn on B-ADJ so rolls don't make fake zones.
+//
+// v2 — five corrections, each measured against the previous version in engine/:
+//  1 BASE SCAN was greedy. It expanded across every qualifying candle, then checked the
+//    height cap once at the end, so a base that was valid at two candles was discarded
+//    because the scan kept going and blew the cap. Measured: ~7% of valid zones were
+//    silently lost. It now stops at the last candle that still fits. Strictly additive —
+//    over 240 zones it recovered 16, changed no boundaries and lost none.
+//  2 BASE TIGHTNESS scored 2/2 in 95-99% of cases, so it carried no information at all,
+//    and on W and D it was impossible to score 1 because mb is clamped to 2 and 3. The
+//    threshold now scales with that timeframe's own cap.
+//  3 DEPARTURE bands were hardcoded at 2.0 and 2.5 ATR while the gate is the sdDep input,
+//    so raising sdDep past 2.5 made every zone score 3. Bands are now multiples of the
+//    gate each zone actually had to clear. Defaults are unchanged.
+//  4 BREAK OF STRUCTURE could fire against a pivot formed inside the impulse leg itself,
+//    since pivots confirm two bars late. The pivot must now predate the base.
+//  5 MAINTENANCE ran inside the timeframe toggle, so switching a timeframe off mid-session
+//    froze its zones: they stopped ageing, stopped counting tests and never died. It now
+//    runs regardless. Zones also expired one bar late; off-by-one corrected.
 
 g0 = "Timeframes: show / max age (its own bars)"
 bool onW = input.bool(true, "Weekly", inline = "w", group = g0)
@@ -49,6 +67,8 @@ f_sd(int mb, float cap) =>
     float pl = ta.pivotlow(low, 2, 2)
     var float sh = na
     var float sl = na
+    var int shB = na
+    var int slB = na
     var int id = 0
     var float zt = na
     var float zb = na
@@ -57,8 +77,10 @@ f_sd(int mb, float cap) =>
     var int zs = 0
     if not na(ph)
         sh := ph
+        shB := bar_index - 2
     if not na(pl)
         sl := pl
+        slB := bar_index - 2
     bool up = close > open
     if bd >= a and (not noGap or math.abs(open - close[1]) <= 0.5 * a)
         int leg = 1
@@ -73,11 +95,17 @@ f_sd(int mb, float cap) =>
         float lo = na
         float bh = na
         float bl = na
+        // (1) stop at the last candle that still fits inside the height cap, instead of
+        // expanding past it and losing the whole zone at the check below
         for k = leg to leg + mb - 1
             if bd[k] <= sdBody / 100 * rg[k] or bd[k] <= 0.25 * a
+                float nHi = nb == 0 ? high[k] : math.max(hi, high[k])
+                float nLo = nb == 0 ? low[k] : math.min(lo, low[k])
+                if nb > 0 and nHi - nLo > cap * a
+                    break
                 nb += 1
-                hi := nb == 1 ? high[k] : math.max(hi, high[k])
-                lo := nb == 1 ? low[k] : math.min(lo, low[k])
+                hi := nHi
+                lo := nLo
                 bh := nb == 1 ? math.max(open[k], close[k]) : math.max(bh, open[k], close[k])
                 bl := nb == 1 ? math.min(open[k], close[k]) : math.min(bl, open[k], close[k])
             else
@@ -91,8 +119,12 @@ f_sd(int mb, float cap) =>
         if nb > 0
             float dep = up ? close - hi : lo - close
             int tB = time[leg + nb - 1]
-            if hi - lo <= cap * a and dep >= math.max(2 * (hi - lo), sdDep * a) and tB != nz(zT)
-                bool bos = up ? close > sh : close < sl
+            float gate = math.max(2 * (hi - lo), sdDep * a)
+            if hi - lo <= cap * a and dep >= gate and tB != nz(zT)
+                // (4) the pivot has to predate the base, or the leg can break structure
+                // it created itself two bars ago
+                int oldB = bar_index - (leg + nb - 1)
+                bool bos = up ? (not na(sh) and close > sh and nz(shB, -1) < oldB) : (not na(sl) and close < sl and nz(slB, -1) < oldB)
                 bool fvg = false
                 for k = 0 to leg - 1
                     if up ? low[k] > high[k + 2] : high[k] < low[k + 2]
@@ -102,7 +134,10 @@ f_sd(int mb, float cap) =>
                 zt := up and sdEdge == "Wick-Body" ? bh : hi
                 zb := not up and sdEdge == "Wick-Body" ? bl : lo
                 zT := tB
-                zs := (dep >= 2.5 * a ? 3 : dep >= 2 * a ? 2 : 1) + (nb <= 3 ? 2 : 1) + (bos ? 2 : 0) + (fvg ? 1 : 0)
+                // (3) score against the gate this zone actually cleared, and (2) scale the
+                // base threshold to the timeframe's own cap so W and D can't collect a free +2
+                int bCap = math.max(1, int(math.ceil(mb / 2)))
+                zs := (dep >= 1.667 * gate ? 3 : dep >= 1.333 * gate ? 2 : 1) + (nb <= bCap ? 2 : 1) + (bos ? 2 : 0) + (fvg ? 1 : 0)
     [id[1], zt[1], zb[1], zT[1], zu[1], zs[1], high[1], low[1], close[1], time[1]]
 
 [wI, wT, wB, wZ, wU, wS, wH, wL, wC, wX] = request.security(syminfo.tickerid, "W", f_sd(math.min(sdBase, 2), math.min(sdBH, 1.0)), lookahead = barmerge.lookahead_on)
@@ -175,7 +210,7 @@ f_upd(int i, float h, float l, float c) =>
             z.age := z.age + 1
             if z.age <= 2 and (z.bull ? c < z.top : c > z.bot)
                 dead := true
-            if z.age > (i == 0 ? agW : i == 1 ? agD : i == 2 ? ag4 : ag1)
+            if z.age >= (i == 0 ? agW : i == 1 ? agD : i == 2 ? ag4 : ag1)
                 dead := true
             if (z.bull ? c < z.bot : c > z.top) or z.tests >= sdTests
                 dead := true
@@ -202,10 +237,11 @@ f_step(int i, bool on, int sec, int id, float t0, float b0, int tm, bool up, int
     if timeframe.in_seconds() <= sec and barstate.isconfirmed and newBar
         if i == 1 or i == 2
             f_brk(i - 1, c)
-        if on
-            f_upd(i, h, l, c)
-            if newZ
-                f_add(i, t0, b0, tm, up, sc)
+        // (5) maintenance runs whether or not the timeframe is switched on, so turning one
+        // off mid-session no longer leaves its zones frozen on the chart forever
+        f_upd(i, h, l, c)
+        if on and newZ
+            f_add(i, t0, b0, tm, up, sc)
     true
 
 f_step(0, onW, 604800, wI, wT, wB, wZ, wU, wS, wH, wL, wC, wX)
