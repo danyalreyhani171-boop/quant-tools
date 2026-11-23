@@ -320,9 +320,8 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
   border: 1px solid color-mix(in srgb, var(--bull) 30%, transparent); white-space: nowrap;
 }
 
-.census { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 20px; }
-@media (max-width: 900px) { .census { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 520px) { .census { grid-template-columns: repeat(2, 1fr); } }
+.census { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+@media (max-width: 760px) { .census { grid-template-columns: repeat(2, 1fr); } }
 .cen-card { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 11px 13px; display: grid; gap: 7px; }
 .cen-card .i { font-family: var(--f-mono); font-size: 11.5px; font-weight: 600; }
 .cen-card .big { font-family: var(--f-mono); font-size: 22px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -446,10 +445,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <span>·</span>
           <span>Closed-bar, <b>no repaint</b></span>
           <span>·</span>
-          <span><b>6</b> instruments</span>
+          <span><b>4</b> instruments</span>
         </div>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#pricing">Start — £47.99/mo</a>
+          <a class="btn btn-primary" href="#pricing">Start — £21.99/mo</a>
           <a class="btn btn-ghost" href="#build">How a zone is built</a>
         </div>
         <p class="price-note" style="margin-top:14px">
@@ -618,10 +617,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <div class="wrap">
     <div class="sec-head">
       <div class="eyebrow">Coverage</div>
-      <h2>Six instruments</h2>
+      <h2>Four instruments</h2>
       <p>
-        FX majors, index futures and metals. The engine is instrument-agnostic — it reads price, not
-        asset class — so this list grows on request rather than by rebuild.
+        One FX major, one index future, one metal, one energy future — four different drivers, so a
+        quiet session in one is rarely a quiet session in all of them. The engine reads price, not
+        asset class, so the list grows on request rather than by rebuild.
       </p>
     </div>
     <div class="tbl-wrap">
@@ -630,12 +630,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <tr><th>Instrument</th><th>Name</th><th>Class</th><th>Session</th><th>Notes</th></tr>
         </thead>
         <tbody>
-          <tr><td class="n">GBPUSD</td><td>British Pound / US Dollar</td><td>FX major</td><td class="n">24/5</td><td>Weekend gaps discarded</td></tr>
-          <tr><td class="n">EURUSD</td><td>Euro / US Dollar</td><td>FX major</td><td class="n">24/5</td><td>Deepest book of the six</td></tr>
-          <tr><td class="n">NQ1!</td><td>E-mini Nasdaq 100</td><td>Index future</td><td class="n">23/5</td><td>Back-adjustment required</td></tr>
-          <tr><td class="n">ES1!</td><td>E-mini S&amp;P 500</td><td>Index future</td><td class="n">23/5</td><td>Back-adjustment required</td></tr>
           <tr><td class="n">XAUUSD</td><td>Gold Spot / US Dollar</td><td>Metal</td><td class="n">24/5</td><td>Wide ATR — zones run large</td></tr>
-          <tr><td class="n">XAGUSD</td><td>Silver Spot / US Dollar</td><td>Metal</td><td class="n">24/5</td><td>Higher beta than gold</td></tr>
+          <tr><td class="n">GBPUSD</td><td>British Pound / US Dollar</td><td>FX major</td><td class="n">24/5</td><td>Weekend gaps discarded</td></tr>
+          <tr><td class="n">NQ1!</td><td>E-mini Nasdaq 100</td><td>Index future</td><td class="n">23/5</td><td>Back-adjustment required</td></tr>
+          <tr><td class="n">CL1!</td><td>WTI Crude Oil</td><td>Energy future</td><td class="n">23/5</td><td>Back-adjustment required · roll gaps discarded</td></tr>
         </tbody>
       </table>
     </div>
@@ -651,9 +649,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <div class="pricing">
       <div class="price-card">
         <div class="eyebrow">DRQuantMTF</div>
-        <div class="price-amt"><span class="cur">£</span><span class="big">47.99</span><span class="per">/month</span></div>
+        <div class="price-amt"><span class="cur">£</span><span class="big">21.99</span><span class="per">/month</span></div>
         <div class="incl">
-          <div><span class="mk">+</span><span>Scored zones on all six instruments, W/D/4H/1H</span></div>
+          <div><span class="mk">+</span><span>Scored zones on all four instruments, W/D/4H/1H</span></div>
           <div><span class="mk">+</span><span>Confluence marking where timeframes agree</span></div>
           <div><span class="mk">+</span><span>Alerts on 1H and 4H — new zone and first touch</span></div>
           <div><span class="mk">+</span><span>Live zone table with test counts and age</span></div>
@@ -708,17 +706,17 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <div class="wrap">
       <div class="term-title">
         <h2>Terminal</h2>
-        <span class="eyebrow">6 instruments · W/D/4H/1H · evaluated on bar close</span>
-        <span class="acct-pill">Active · £47.99 · renews 23 Dec</span>
+        <span class="eyebrow">4 instruments · W/D/4H/1H · evaluated on bar close</span>
+        <span class="acct-pill">Active · £21.99 · renews 23 Dec</span>
       </div>
       <div class="census" id="census"></div>
     </div>
   </div>
 
   <div class="term-tabs" role="tablist" aria-label="Terminal sections">
-    <button role="tab" id="ttab-live" aria-selected="true" data-t="live">In a zone<span class="count">3</span></button>
-    <button role="tab" id="ttab-near" aria-selected="false" data-t="near">Approaching<span class="count">4</span></button>
-    <button role="tab" id="ttab-all" aria-selected="false" data-t="all">All zones<span class="count">17</span></button>
+    <button role="tab" id="ttab-live" aria-selected="true" data-t="live">In a zone<span class="count" id="cntLive">—</span></button>
+    <button role="tab" id="ttab-near" aria-selected="false" data-t="near">Approaching<span class="count" id="cntNear">—</span></button>
+    <button role="tab" id="ttab-all" aria-selected="false" data-t="all">All zones<span class="count" id="cntAll">—</span></button>
     <button role="tab" id="ttab-log" aria-selected="false" data-t="log">Zone log</button>
     <button role="tab" id="ttab-alerts" aria-selected="false" data-t="alerts">Alerts</button>
     <button role="tab" id="ttab-delivery" aria-selected="false" data-t="delivery">Delivery</button>
@@ -926,30 +924,43 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
      Levels reflect the 20–22 Nov 2026 session so the board reads realistically.
      Illustrative only — not a live feed. */
   var ZONES = [
-    // inst,   tf,   side,     range,              score, tests, age,  star,     dist(%)  inside
-    ["GBPUSD", "D",  "demand", "1.2968 – 1.3024",  9, 0, "6d",  "W",    0,    true],
-    ["GBPUSD", "4H", "demand", "1.2991 – 1.3016",  8, 0, "11h", "D",    0,    true],
-    ["GBPUSD", "W",  "demand", "1.2810 – 1.2944",  7, 0, "14w", "",     0.6,  false],
-    ["GBPUSD", "4H", "supply", "1.3140 – 1.3178",  6, 2, "3d",  "",     1.0,  false],
-    ["GBPUSD", "1H", "demand", "1.3002 – 1.3014",  7, 0, "4h",  "4H",   0,    true],
-    ["EURUSD", "D",  "supply", "1.1012 – 1.1068",  8, 1, "8d",  "",     1.1,  false],
-    ["EURUSD", "4H", "supply", "1.0948 – 1.0972",  7, 0, "14h", "D",    0.5,  false],
-    ["EURUSD", "W",  "demand", "1.0702 – 1.0810",  6, 0, "21w", "",     8.4,  false],
-    ["NQ1!",   "D",  "supply", "26,120 – 26,480",  8, 1, "4d",  "",     1.2,  false],
-    ["NQ1!",   "4H", "demand", "24,610 – 24,980",  6, 0, "19h", "",     1.8,  false],
-    ["NQ1!",   "W",  "demand", "23,400 – 24,050",  7, 0, "11w", "",     5.2,  false],
-    ["ES1!",   "4H", "demand", "7,214 – 7,268",    6, 1, "22h", "",     0,    true],
-    ["ES1!",   "D",  "supply", "7,480 – 7,552",    7, 0, "6d",  "",     3.1,  false],
-    ["XAUUSD", "D",  "supply", "3,642 – 3,689",    8, 2, "5d",  "W",    0,    true],
-    ["XAUUSD", "4H", "supply", "3,655 – 3,674",    7, 0, "16h", "D",    0,    true],
-    ["XAUUSD", "W",  "supply", "3,712 – 3,801",    7, 1, "9w",  "",     1.4,  false],
-    ["XAGUSD", "4H", "demand", "40.12 – 40.88",    7, 0, "9h",  "D",    0.8,  false]
+    // inst,   tf,   side,     range,                score, tests, age,  star,  dist(%) inside
+    ["XAUUSD", "D",  "supply", "3,642 – 3,689",      8, 2, "5d",  "W",   0,    true],
+    ["XAUUSD", "4H", "supply", "3,655 – 3,674",      7, 0, "16h", "D",   0,    true],
+    ["XAUUSD", "W",  "supply", "3,712 – 3,801",      7, 1, "9w",  "",    1.4,  false],
+    ["XAUUSD", "1H", "demand", "3,588 – 3,601",      5, 0, "7h",  "",    1.9,  false],
+    ["GBPUSD", "D",  "demand", "1.2968 – 1.3024",    9, 0, "6d",  "W",   0,    true],
+    ["GBPUSD", "4H", "demand", "1.2991 – 1.3016",    8, 0, "11h", "D",   0,    true],
+    ["GBPUSD", "1H", "demand", "1.3002 – 1.3014",    7, 0, "4h",  "4H",  0,    true],
+    ["GBPUSD", "W",  "demand", "1.2810 – 1.2944",    7, 0, "14w", "",    0.6,  false],
+    ["GBPUSD", "4H", "supply", "1.3140 – 1.3178",    6, 2, "3d",  "",    1.0,  false],
+    ["NQ1!",   "D",  "supply", "27,120 – 27,480",    8, 1, "4d",  "",    1.2,  false],
+    ["NQ1!",   "4H", "demand", "26,410 – 26,780",    6, 0, "19h", "",    0.4,  false],
+    ["NQ1!",   "W",  "demand", "25,400 – 26,050",    7, 0, "11w", "",    3.2,  false],
+    ["CL1!",   "D",  "supply", "85.20 – 86.40",      8, 0, "6d",  "",    2.2,  false],
+    ["CL1!",   "4H", "supply", "83.90 – 84.35",      7, 1, "14h", "D",   0.6,  false],
+    ["CL1!",   "1H", "demand", "82.60 – 83.05",      6, 0, "5h",  "",    0.5,  false],
+    ["CL1!",   "W",  "demand", "78.40 – 80.10",      7, 0, "13w", "",    4.0,  false]
   ];
 
-  var INSTRUMENTS = ["GBPUSD", "EURUSD", "NQ1!", "ES1!", "XAUUSD", "XAGUSD"];
+  var INSTRUMENTS = ["XAUUSD", "GBPUSD", "NQ1!", "CL1!"];
 
   // score breakdowns for the zones price is sitting in
   var BREAKDOWNS = {
+    "XAUUSD|D": [
+      ["Departure strength", true, 3, "3.1 ATR — gold's ATR runs wide"],
+      ["Base tightness", true, 2, "3 base candles"],
+      ["Break of structure", true, 2, "took out the prior swing low"],
+      ["Fair value gap", true, 1, "imbalance present in the leg"],
+      ["Freshness", false, 0, "tested twice — one more and it is removed"]
+    ],
+    "XAUUSD|4H": [
+      ["Departure strength", true, 2, "2.2 ATR"],
+      ["Base tightness", true, 2, "2 base candles"],
+      ["Break of structure", false, 0, "did not clear the prior swing"],
+      ["Fair value gap", true, 1, "gap between bar 1 and bar 3"],
+      ["Freshness", true, 2, "untested"]
+    ],
     "GBPUSD|D": [
       ["Departure strength", true, 3, "2.8 ATR away from the base"],
       ["Base tightness", true, 2, "2 base candles"],
@@ -957,33 +968,34 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       ["Fair value gap", false, 0, "no imbalance left in the leg"],
       ["Freshness", true, 2, "untested"]
     ],
-    "ES1!|4H": [
+    "GBPUSD|4H": [
       ["Departure strength", true, 2, "2.1 ATR"],
       ["Base tightness", true, 2, "3 base candles"],
-      ["Break of structure", false, 0, "did not clear the prior swing"],
-      ["Fair value gap", true, 1, "gap between bar 1 and bar 3"],
-      ["Freshness", false, 1, "tested once"]
+      ["Break of structure", true, 2, "cleared the prior swing high"],
+      ["Fair value gap", false, 0, "no imbalance"],
+      ["Freshness", true, 2, "untested"]
     ],
-    "XAUUSD|D": [
-      ["Departure strength", true, 3, "3.1 ATR — wide ATR on gold"],
-      ["Base tightness", true, 2, "3 base candles"],
-      ["Break of structure", true, 2, "took out the prior swing low"],
-      ["Fair value gap", true, 1, "imbalance present"],
-      ["Freshness", false, 0, "tested twice — one more and it is removed"]
+    "GBPUSD|1H": [
+      ["Departure strength", false, 1, "1.6 ATR — only just clears the gate"],
+      ["Base tightness", true, 2, "2 base candles"],
+      ["Break of structure", true, 2, "cleared the prior swing high"],
+      ["Fair value gap", false, 0, "no imbalance"],
+      ["Freshness", true, 2, "untested"]
     ]
   };
 
   var LOG = [
-    ["22 Nov 16:00", "GBPUSD", "4H", "demand", 8, "first touch", "holding"],
-    ["22 Nov 12:00", "XAUUSD", "D",  "supply", 8, "second test", "holding"],
-    ["22 Nov 08:00", "GBPUSD", "1H", "demand", 7, "zone formed", "untested"],
-    ["21 Nov 20:00", "ES1!",   "4H", "demand", 6, "first touch", "held"],
-    ["21 Nov 16:00", "NQ1!",   "4H", "supply", 7, "third test",  "removed — test cap"],
-    ["21 Nov 09:00", "XAGUSD", "4H", "demand", 7, "zone formed", "untested"],
+    ["23 Nov 04:00", "CL1!",   "4H", "supply", 7, "first touch",    "holding"],
+    ["22 Nov 16:00", "GBPUSD", "4H", "demand", 8, "first touch",    "holding"],
+    ["22 Nov 12:00", "XAUUSD", "D",  "supply", 8, "second test",    "holding"],
+    ["22 Nov 08:00", "GBPUSD", "1H", "demand", 7, "zone formed",    "untested"],
+    ["21 Nov 20:00", "CL1!",   "1H", "demand", 6, "zone formed",    "untested"],
+    ["21 Nov 16:00", "NQ1!",   "4H", "supply", 7, "third test",     "removed — test cap"],
+    ["21 Nov 09:00", "XAUUSD", "4H", "supply", 7, "zone formed",    "untested"],
     ["20 Nov 21:00", "NQ1!",   "D",  "demand", 8, "far-edge close", "broke"],
-    ["20 Nov 14:00", "EURUSD", "4H", "supply", 7, "first touch", "held"],
-    ["20 Nov 10:00", "GBPUSD", "4H", "supply", 6, "second test", "held"],
-    ["19 Nov 18:00", "XAUUSD", "1H", "demand", 5, "age limit",   "expired"]
+    ["20 Nov 14:00", "CL1!",   "D",  "supply", 8, "zone formed",    "untested"],
+    ["20 Nov 10:00", "GBPUSD", "4H", "supply", 6, "second test",    "held"],
+    ["19 Nov 18:00", "XAUUSD", "1H", "demand", 5, "age limit",      "expired"]
   ];
 
   /* ── landing board: nearest zone per instrument ── */
@@ -1156,7 +1168,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   /* ── terminal: in-zone cards ──────────────────── */
   var lc = document.getElementById("liveCards");
-  ZONES.filter(function (z) { return z[9]; }).slice(0, 4).forEach(function (z) {
+  ZONES.filter(function (z) { return z[9]; }).forEach(function (z) {
     var key = z[0] + "|" + z[1];
     var bd = BREAKDOWNS[key];
     var card = el("div", "scard live");
@@ -1269,6 +1281,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       { t: r[6], color: outCol }
     ]);
   });
+
+  // tab counts come from the data, so they can never drift from the tables
+  document.getElementById("cntLive").textContent =
+    String(ZONES.filter(function (z) { return z[9]; }).length);
+  document.getElementById("cntNear").textContent =
+    String(ZONES.filter(function (z) { return !z[9] && z[8] <= 2; }).length);
+  document.getElementById("cntAll").textContent = String(ZONES.length);
 
   /* ── terminal: alerts ─────────────────────────── */
   var itg = document.getElementById("instToggles");

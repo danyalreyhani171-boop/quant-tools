@@ -5,7 +5,7 @@
 Multi-timeframe supply and demand zones, scored and self-invalidating. Weekly, daily, 4H and 1H
 zones built by one set of rules, graded out of ten, and marked where the timeframes agree.
 
-Subscription: £47.99/month.
+Subscription: £21.99/month.
 
 ---
 
@@ -50,10 +50,11 @@ Zones per side are capped: three by default, two on weekly, four on 1H.
 
 ## Instruments
 
-GBPUSD · EURUSD · NQ1! · ES1! · XAUUSD · XAGUSD
+XAUUSD (gold) · GBPUSD · NQ1! (Nasdaq) · CL1! (WTI crude)
 
-The engine is instrument-agnostic — it reads price, not asset class — so this list is configuration,
-not architecture. Enable back-adjustment (B-ADJ) on futures charts.
+One metal, one FX major, one index future, one energy future — four different drivers, so a quiet
+session in one is rarely a quiet session in all of them. The engine reads price, not asset class, so
+the list is configuration, not architecture. Enable back-adjustment (B-ADJ) on NQ1! and CL1!.
 
 ## Timeframes
 
