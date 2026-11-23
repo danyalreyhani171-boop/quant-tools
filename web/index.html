@@ -6,23 +6,31 @@
 <style>
 /* Layout: terminal-grade data panels on a deep slate ground, set in a research-note column.
    Dark-first — this is a product traders use at night. */
+/* Single dark theme by intent — navy and grey throughout, no light mode, no warm hues. */
 :root {
-  --bg: #0b1016;
-  --surface: #121a23;
-  --surface-2: #19232e;
-  --line: #243040;
-  --line-soft: #1a2430;
-  --fg: #e4ecf4;
-  --fg-dim: #8ea0b2;
-  --fg-faint: #5d6e7e;
-  --accent: #f0a500;
-  --accent-soft: rgba(240, 165, 0, 0.12);
-  --bull: #26a69a;
-  --bear: #ef5350;
-  --warn: #e8a33d;
-  --bull-soft: rgba(38, 166, 154, 0.13);
-  --bear-soft: rgba(239, 83, 80, 0.13);
-  --warn-soft: rgba(232, 163, 61, 0.13);
+  --bg:          #070b11;
+  --surface:     #0d131b;
+  --surface-2:   #131b25;
+  --line:        #1e2836;
+  --line-soft:   #151d27;
+  --fg:          #d4dbe4;
+  --fg-dim:      #85909f;
+  --fg-faint:    #647181;
+
+  /* navy, used where the amber was */
+  --accent:      #5d80b6;
+  --accent-deep: #1b2d4d;
+  --accent-soft: rgba(93, 128, 182, 0.13);
+
+  /* side of the book — desaturated to sit in the navy palette */
+  --bull:        #2f8a7e;
+  --bear:        #bc524d;
+  --bull-soft:   rgba(47, 138, 126, 0.13);
+  --bear-soft:   rgba(188, 82, 77, 0.13);
+
+  /* notices — grey, never amber */
+  --warn:        #7e8c9d;
+  --warn-soft:   rgba(126, 140, 157, 0.12);
 
   --f-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --f-body: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -30,32 +38,6 @@
 
   --col: 1140px;
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #f6f8fa; --surface: #ffffff; --surface-2: #eef2f6;
-    --line: #d3dde7; --line-soft: #e4eaf0;
-    --fg: #0b1016; --fg-dim: #4c5d6d; --fg-faint: #7b8b9a;
-    --accent: #b07400; --accent-soft: rgba(176, 116, 0, 0.1);
-    --bull: #0f8077; --bear: #c43c38; --warn: #a86f12;
-    --bull-soft: rgba(15, 128, 119, 0.1);
-    --bear-soft: rgba(196, 60, 56, 0.1);
-    --warn-soft: rgba(168, 111, 18, 0.1);
-    color-scheme: light;
-  }
-}
-
-:root[data-theme="light"] {
-  --bg: #f6f8fa; --surface: #ffffff; --surface-2: #eef2f6;
-  --line: #d3dde7; --line-soft: #e4eaf0;
-  --fg: #0b1016; --fg-dim: #4c5d6d; --fg-faint: #7b8b9a;
-  --accent: #b07400; --accent-soft: rgba(176, 116, 0, 0.1);
-  --bull: #0f8077; --bear: #c43c38; --warn: #a86f12;
-  --bull-soft: rgba(15, 128, 119, 0.1);
-  --bear-soft: rgba(196, 60, 56, 0.1);
-  --warn-soft: rgba(168, 111, 18, 0.1);
-  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -127,8 +109,8 @@ body::before {
   padding: 11px 20px; border-radius: 3px; border: 1px solid transparent;
   cursor: pointer; text-decoration: none; display: inline-block;
 }
-.btn-primary { background: var(--accent); color: #0b1016; }
-.btn-primary:hover { filter: brightness(1.1); }
+.btn-primary { background: var(--accent-deep); color: var(--fg); border-color: var(--accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent-deep) 72%, var(--accent)); }
 .btn-ghost { border-color: var(--line); color: var(--fg); background: transparent; }
 .btn-ghost:hover { background: var(--surface-2); }
 .price-note { font-family: var(--f-mono); font-size: 12px; color: var(--fg-faint); }
@@ -295,11 +277,6 @@ footer { background: var(--surface); }
 footer .wrap { padding-block: 32px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
 footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-faint); }
 
-.theme-btn {
-  background: transparent; border: 1px solid var(--line); color: var(--fg-dim);
-  font-family: var(--f-mono); font-size: 11px; padding: 5px 9px; border-radius: 2px; cursor: pointer;
-}
-.theme-btn:hover { color: var(--fg); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ── member terminal ───────────────────────────── */
@@ -422,7 +399,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       <a href="#pricing">Pricing</a>
       <a href="#terminal" style="color:var(--accent)">Member terminal</a>
     </nav>
-    <button class="theme-btn" id="themeBtn" type="button">theme</button>
   </div>
 </header>
 
@@ -893,21 +869,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 <script>
 (function () {
   "use strict";
-
-  /* ── theme ────────────────────────────────────── */
-  var root = document.documentElement;
-  var btn = document.getElementById("themeBtn");
-  try {
-    var saved = localStorage.getItem("drq-theme");
-    if (saved === "dark" || saved === "light") root.setAttribute("data-theme", saved);
-  } catch (e) {}
-  btn.addEventListener("click", function () {
-    var cur = root.getAttribute("data-theme");
-    var isDark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var next = isDark ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    try { localStorage.setItem("drq-theme", next); } catch (e) {}
-  });
 
   function el(tag, cls, txt) {
     var n = document.createElement(tag);
