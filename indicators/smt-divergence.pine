@@ -1,0 +1,220 @@
+//@version=6
+indicator("DRQuantMTF — SMT Divergence (1H / 4H)", "DRQuant SMT", overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+// Smart Money Technique divergence between a correlated pair, on 1H and 4H only.
+// Closed bars only (no repaint): a pivot is only read once it is confirmed, and every
+// reference-symbol read is shifted so nothing is known before it happened.
+//
+// Pairs shipped: GBPUSD<->EURUSD, NQ1!<->ES1!, XAUUSD<->XAGUSD.
+//
+// What it does NOT do: fire on a divergence alone. A divergence with a broken correlation
+// is two unrelated charts, not a signal, so every setup is gated on rolling return
+// correlation and scored. Read it as a direction filter for a zone, not a trigger.
+
+// ─────────────────────────────── inputs ───────────────────────────────
+g0 = "Pair"
+string refIn = input.symbol("", "Reference symbol (blank = auto-pair)", group = g0)
+bool  only14 = input.bool(true, "Only run on 1H and 4H", group = g0)
+
+g1 = "Swing detection"
+int   LB     = input.int(2, "Pivot strength (bars each side)", 1, 10, group = g1,
+     tooltip = "2 matches the MTF S&D script. Higher = fewer, larger swings.")
+int   maxGap = input.int(60, "Ignore a prior swing older than N bars", 10, 300, group = g1)
+
+g2 = "Correlation gate"
+int   cLen   = input.int(60, "Correlation lookback (bars)", 20, 300, group = g2)
+float cMin   = input.float(0.70, "Reject signal below |correlation|", 0.0, 1.0, 0.01, group = g2)
+float cStr   = input.float(0.85, "Treat as strong correlation above", 0.0, 1.0, 0.01, group = g2)
+
+g3 = "Quality"
+float dMin   = input.float(0.25, "Minimum divergence size (x ATR)", 0.0, 3.0, 0.05, group = g3,
+     tooltip = "How far the two swings must disagree before it counts as a divergence rather than noise.")
+int   minSc  = input.int(5, "Hide signals scoring below", 1, 10, group = g3)
+bool  wantSw = input.bool(true, "Require a liquidity sweep (wick through, close back inside)", group = g3)
+
+g4 = "Display"
+bool  shoLin = input.bool(true, "Draw divergence lines", group = g4)
+bool  shoLbl = input.bool(true, "Show labels", group = g4)
+bool  shoTbl = input.bool(true, "Show status panel", group = g4)
+color C_BULL = input.color(#26a69a, "Bullish", inline = "c", group = g4)
+color C_BEAR = input.color(#ef5350, "Bearish", inline = "c", group = g4)
+
+// ─────────────────────── pair resolution ───────────────────────
+f_auto() =>
+    string t = str.upper(syminfo.ticker)
+    string p = ""
+    if str.contains(t, "XAUUSD") or str.contains(t, "GOLD")
+        p := "OANDA:XAGUSD"
+    else if str.contains(t, "XAGUSD") or str.contains(t, "SILVER")
+        p := "OANDA:XAUUSD"
+    else if str.contains(t, "GBPUSD")
+        p := "OANDA:EURUSD"
+    else if str.contains(t, "EURUSD")
+        p := "OANDA:GBPUSD"
+    else if str.contains(t, "NQ") or str.contains(t, "NASDAQ")
+        p := "CME_MINI:ES1!"
+    else if str.contains(t, "ES") or str.contains(t, "SPX") or str.contains(t, "SP500")
+        p := "CME_MINI:NQ1!"
+    p
+
+string refSym = refIn != "" ? refIn : f_auto()
+bool   paired = refSym != ""
+
+// Same-timeframe read of the reference symbol. gaps_off keeps the series aligned to the
+// chart's bars; lookahead_off plus the [1] shift below means no future data is ever used.
+[rH_, rL_, rC_] = request.security(paired ? refSym : syminfo.tickerid, timeframe.period,
+     [high, low, close], gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+
+// ─────────────────────── eligibility ───────────────────────
+int tfSec = timeframe.in_seconds()
+bool tfOk = not only14 or tfSec == 3600 or tfSec == 14400
+bool is4H = tfSec == 14400
+
+// ─────────────────────── correlation on log returns ───────────────────────
+// Correlating price levels gives a spuriously high reading because both series trend.
+// Returns are the honest measure of whether the two still move together.
+float pRet = math.log(close / math.max(close[1], syminfo.mintick))
+float rRet = math.log(math.max(rC_, syminfo.mintick) / math.max(nz(rC_[1], rC_), syminfo.mintick))
+float corr = ta.correlation(pRet, rRet, cLen)
+float aCorr = math.abs(nz(corr))
+bool corrOk = not na(corr) and aCorr >= cMin
+
+float atr = nz(ta.atr(14), ta.cum(ta.tr(true)) / (bar_index + 1))
+
+// ─────────────────────── confirmed swings ───────────────────────
+// ta.pivot* confirms LB bars after the fact, so at this bar the pivot sits LB bars back and
+// the window of (2*LB+1) bars ending here is centred on it. The reference extreme is taken
+// across that same window, which absorbs a bar or two of timing offset between the symbols.
+float pvH = ta.pivothigh(high, LB, LB)
+float pvL = ta.pivotlow(low, LB, LB)
+int   win = 2 * LB + 1
+
+float rHiW = ta.highest(rH_, win)
+float rLoW = ta.lowest(rL_, win)
+
+// previous confirmed swing on each side: primary price, reference price, bar, chart bar index
+var float phP = na, var float phR = na, var int phB = na, var int phI = na
+var float plP = na, var float plR = na, var int plB = na, var int plI = na
+
+// ─────────────────────── signal state ───────────────────────
+var int    sDir   = 0          // 1 bullish, -1 bearish, 0 none
+var int    sScore = 0
+var float  sCorr  = na
+var string sStrong = ""
+var int    sBar   = na
+
+f_sweep(bool atLow, float nowPx, float prevPx) =>
+    // A sweep is the prior swing taken out intrabar and given back by the close: the wick
+    // trades through, the body does not. That is the footprint SMT is meant to catch.
+    atLow ? (low <= prevPx and close > prevPx) : (high >= prevPx and close < prevPx)
+
+f_score(float dSize, bool swept, bool strongCorr) =>
+    int s = 1
+    s += dSize >= 1.0 * atr ? 3 : dSize >= 0.5 * atr ? 2 : 1   // how wide the disagreement is
+    s += strongCorr ? 3 : 2                                     // how trustworthy the pairing is
+    s += swept ? 2 : 0                                          // liquidity taken
+    s += is4H ? 1 : 0                                           // higher timeframe carries more
+    math.min(s, 10)
+
+// ── bullish: primary makes the lower low, reference refuses to follow ──
+if not na(pvL) and tfOk and paired
+    float nowP = pvL
+    float nowR = rLoW
+    int   nowI = bar_index - LB
+    if not na(plP) and not na(plR) and (nowI - nz(plI, nowI)) <= maxGap
+        bool pLL = nowP < plP          // primary swept its low
+        bool rHL = nowR > plR          // reference held above its own
+        bool pHL = nowP > plP          // the mirror case: primary is the strong one
+        bool rLL = nowR < plR
+        bool diverge = (pLL and rHL) or (pHL and rLL)
+        if diverge
+            // size the disagreement in ATR, normalising the reference leg onto the primary's scale
+            float pMove = math.abs(nowP - plP)
+            float rMove = math.abs(nowR - plR) * (close / math.max(rC_, syminfo.mintick))
+            float dSize = pMove + rMove
+            bool swept = f_sweep(true, nowP, plP)
+            if corrOk and dSize >= dMin * atr and (not wantSw or not pLL or swept)
+                int sc = f_score(dSize, swept, aCorr >= cStr)
+                if sc >= minSc
+                    sDir := 1
+                    sScore := sc
+                    sCorr := corr
+                    sStrong := pLL ? syminfo.ticker : str.replace_all(refSym, "OANDA:", "")
+                    sBar := bar_index
+                    if shoLin
+                        line.new(plB, plP, time[LB], nowP, xloc = xloc.bar_time,
+                             color = C_BULL, width = 2, style = line.style_dotted)
+                    if shoLbl
+                        label.new(time[LB], nowP, "SMT " + str.tostring(sc) + "/10",
+                             xloc = xloc.bar_time, yloc = yloc.belowbar, color = color.new(C_BULL, 15),
+                             textcolor = color.white, style = label.style_label_up, size = size.small)
+                    alert(syminfo.ticker + " " + timeframe.period + ": bullish SMT " + str.tostring(sc)
+                         + "/10 vs " + refSym + " | corr " + str.tostring(corr, "#.00")
+                         + " | strong side " + sStrong, alert.freq_once_per_bar_close)
+    plP := nowP, plR := nowR, plB := time[LB], plI := nowI
+
+// ── bearish: primary makes the higher high, reference refuses to follow ──
+if not na(pvH) and tfOk and paired
+    float nowP = pvH
+    float nowR = rHiW
+    int   nowI = bar_index - LB
+    if not na(phP) and not na(phR) and (nowI - nz(phI, nowI)) <= maxGap
+        bool pHH = nowP > phP
+        bool rLH = nowR < phR
+        bool pLH = nowP < phP
+        bool rHH = nowR > phR
+        bool diverge = (pHH and rLH) or (pLH and rHH)
+        if diverge
+            float pMove = math.abs(nowP - phP)
+            float rMove = math.abs(nowR - phR) * (close / math.max(rC_, syminfo.mintick))
+            float dSize = pMove + rMove
+            bool swept = f_sweep(false, nowP, phP)
+            if corrOk and dSize >= dMin * atr and (not wantSw or not pHH or swept)
+                int sc = f_score(dSize, swept, aCorr >= cStr)
+                if sc >= minSc
+                    sDir := -1
+                    sScore := sc
+                    sCorr := corr
+                    sStrong := pHH ? str.replace_all(refSym, "OANDA:", "") : syminfo.ticker
+                    sBar := bar_index
+                    if shoLin
+                        line.new(phB, phP, time[LB], nowP, xloc = xloc.bar_time,
+                             color = C_BEAR, width = 2, style = line.style_dotted)
+                    if shoLbl
+                        label.new(time[LB], nowP, "SMT " + str.tostring(sc) + "/10",
+                             xloc = xloc.bar_time, yloc = yloc.abovebar, color = color.new(C_BEAR, 15),
+                             textcolor = color.white, style = label.style_label_down, size = size.small)
+                    alert(syminfo.ticker + " " + timeframe.period + ": bearish SMT " + str.tostring(sc)
+                         + "/10 vs " + refSym + " | corr " + str.tostring(corr, "#.00")
+                         + " | weak side " + sStrong, alert.freq_once_per_bar_close)
+    phP := nowP, phR := nowR, phB := time[LB], phI := nowI
+
+// ─────────────────────── status panel ───────────────────────
+if shoTbl and barstate.islast
+    var table t = table.new(position.top_right, 2, 5, border_width = 1)
+    color hdr = color.new(#1e222d, 10)
+    table.cell(t, 0, 0, "DRQuant SMT", bgcolor = hdr, text_color = color.white, text_size = size.small)
+    table.cell(t, 1, 0, timeframe.period, bgcolor = hdr, text_color = color.white, text_size = size.small)
+
+    table.cell(t, 0, 1, "Pair", text_color = color.gray, text_size = size.tiny)
+    table.cell(t, 1, 1, paired ? str.replace_all(refSym, "OANDA:", "") : "none — set manually",
+         text_color = paired ? color.white : C_BEAR, text_size = size.tiny)
+
+    color cc = aCorr >= cStr ? C_BULL : aCorr >= cMin ? color.orange : C_BEAR
+    table.cell(t, 0, 2, "Correlation " + str.tostring(cLen) + "b", text_color = color.gray, text_size = size.tiny)
+    table.cell(t, 1, 2, na(corr) ? "—" : str.tostring(corr, "#.00"), text_color = cc, text_size = size.tiny)
+
+    table.cell(t, 0, 3, "Gate", text_color = color.gray, text_size = size.tiny)
+    table.cell(t, 1, 3, not tfOk ? "off (1H/4H only)" : corrOk ? "open" : "shut — corr too low",
+         text_color = tfOk and corrOk ? C_BULL : color.orange, text_size = size.tiny)
+
+    string st = sDir == 0 ? "no signal" :
+         (sDir == 1 ? "BULLISH " : "BEARISH ") + str.tostring(sScore) + "/10 · "
+         + str.tostring(bar_index - nz(sBar, bar_index)) + "b ago"
+    table.cell(t, 0, 4, "Last", text_color = color.gray, text_size = size.tiny)
+    table.cell(t, 1, 4, st, text_color = sDir == 1 ? C_BULL : sDir == -1 ? C_BEAR : color.gray,
+         text_size = size.tiny)
+
+// ─────────────────────── exports for the dashboard ───────────────────────
+plot(sDir, "SMT direction", display = display.none)
+plot(sScore, "SMT score", display = display.none)
+plot(corr, "Correlation", display = display.none)

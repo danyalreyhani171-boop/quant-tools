@@ -1,0 +1,214 @@
+//@version=6
+indicator("MTF Supply & Demand (W / D / 4H / 1H)", "MTF S&D", overlay = true, max_boxes_count = 500, max_bars_back = 200)
+// Weekly, daily, 4H and 1H supply/demand zones on one chart. Closed bars only (no repaint).
+// A timeframe shows only on charts at or below it. Futures: turn on B-ADJ so rolls don't make fake zones.
+
+g0 = "Timeframes: show / max age (its own bars)"
+bool onW = input.bool(true, "Weekly", inline = "w", group = g0)
+int agW = input.int(52, "", 5, 500, inline = "w", group = g0)
+bool onD = input.bool(true, "Daily", inline = "d", group = g0)
+int agD = input.int(120, "", 5, 1000, inline = "d", group = g0)
+bool on4 = input.bool(true, "4H", inline = "4", group = g0)
+int ag4 = input.int(60, "", 5, 1000, inline = "4", group = g0)
+bool on1 = input.bool(true, "1H", inline = "1", group = g0)
+int ag1 = input.int(120, "", 5, 1000, inline = "1", group = g0)
+int zMax = input.int(3, "Zones per side (W one fewer, 1H one more)", 1, 10, group = g0)
+
+g1 = "Zone rules"
+int sdBase = input.int(6, "Max base candles (W uses ≤2, D ≤3)", 1, 8, group = g1)
+float sdBody = input.float(50.0, "Base candle body ≤ % of its range", 10.0, 90.0, group = g1)
+float sdBH = input.float(1.5, "Zone height ≤ x ATR (W and D use ≤1)", 0.2, 3.0, 0.1, group = g1)
+float sdDep = input.float(1.5, "Move away ≥ x ATR", 0.5, 5.0, 0.1, group = g1)
+string sdEdge = input.string("Wick-Body", "Zone edges", ["Wick-Body", "Wick-Wick"], group = g1)
+int sdTests = input.int(3, "Remove after this many tests", 1, 10, group = g1)
+bool noGap = input.bool(true, "Ignore moves made by gaps (rolls, weekends)", group = g1)
+bool keepOld = input.bool(false, "Keep broken zones (faded)", group = g1)
+
+color C_D = #26a69a
+color C_S = #ef5350
+
+type Z
+    float top
+    float bot
+    int t
+    bool bull
+    int sc
+    int tf
+    string star = ""
+    int tests = 0
+    int age = 0
+    bool inside = false
+    box bx
+
+// ---------- zone detection: the same rules run on each timeframe ----------
+f_sd(int mb, float cap) =>
+    float a = nz(ta.atr(14), ta.cum(ta.tr(true)) / (bar_index + 1))
+    float bd = math.abs(close - open)
+    float rg = high - low
+    float ph = ta.pivothigh(high, 2, 2)
+    float pl = ta.pivotlow(low, 2, 2)
+    var float sh = na
+    var float sl = na
+    var int id = 0
+    var float zt = na
+    var float zb = na
+    var int zT = na
+    var bool zu = false
+    var int zs = 0
+    if not na(ph)
+        sh := ph
+    if not na(pl)
+        sl := pl
+    bool up = close > open
+    if bd >= a and (not noGap or math.abs(open - close[1]) <= 0.5 * a)
+        int leg = 1
+        for k = 1 to 2
+            bool same = up ? close[k] > open[k] : close[k] < open[k]
+            if same and bd[k] > 0.5 * rg[k] and (not noGap or math.abs(open[k] - close[k + 1]) <= 0.5 * a)
+                leg += 1
+            else
+                break
+        int nb = 0
+        float hi = na
+        float lo = na
+        float bh = na
+        float bl = na
+        for k = leg to leg + mb - 1
+            if bd[k] <= sdBody / 100 * rg[k] or bd[k] <= 0.25 * a
+                nb += 1
+                hi := nb == 1 ? high[k] : math.max(hi, high[k])
+                lo := nb == 1 ? low[k] : math.min(lo, low[k])
+                bh := nb == 1 ? math.max(open[k], close[k]) : math.max(bh, open[k], close[k])
+                bl := nb == 1 ? math.min(open[k], close[k]) : math.min(bl, open[k], close[k])
+            else
+                break
+        if nb == 0 and (up ? close[leg] < open[leg] : close[leg] > open[leg])
+            nb := 1
+            hi := high[leg]
+            lo := low[leg]
+            bh := math.max(open[leg], close[leg])
+            bl := math.min(open[leg], close[leg])
+        if nb > 0
+            float dep = up ? close - hi : lo - close
+            int tB = time[leg + nb - 1]
+            if hi - lo <= cap * a and dep >= math.max(2 * (hi - lo), sdDep * a) and tB != nz(zT)
+                bool bos = up ? close > sh : close < sl
+                bool fvg = false
+                for k = 0 to leg - 1
+                    if up ? low[k] > high[k + 2] : high[k] < low[k + 2]
+                        fvg := true
+                id += 1
+                zu := up
+                zt := up and sdEdge == "Wick-Body" ? bh : hi
+                zb := not up and sdEdge == "Wick-Body" ? bl : lo
+                zT := tB
+                zs := (dep >= 2.5 * a ? 3 : dep >= 2 * a ? 2 : 1) + (nb <= 3 ? 2 : 1) + (bos ? 2 : 0) + (fvg ? 1 : 0)
+    [id[1], zt[1], zb[1], zT[1], zu[1], zs[1], high[1], low[1], close[1], time[1]]
+
+[wI, wT, wB, wZ, wU, wS, wH, wL, wC, wX] = request.security(syminfo.tickerid, "W", f_sd(math.min(sdBase, 2), math.min(sdBH, 1.0)), lookahead = barmerge.lookahead_on)
+[dI, dT, dB, dZ, dU, dS, dH, dL, dC, dX] = request.security(syminfo.tickerid, "D", f_sd(math.min(sdBase, 3), math.min(sdBH, 1.0)), lookahead = barmerge.lookahead_on)
+[fI, fT, fB, fZ, fU, fS, fH, fL, fC, fX] = request.security(syminfo.tickerid, "240", f_sd(sdBase, sdBH), lookahead = barmerge.lookahead_on)
+[hI, hT, hB, hZ, hU, hS, hH, hL, hC, hX] = request.security(syminfo.tickerid, "60", f_sd(sdBase, sdBH), lookahead = barmerge.lookahead_on)
+
+// ---------- drawing & tracking on the chart ----------
+var array<Z> zones = array.new<Z>()
+
+f_lbl(int i) =>
+    i == 0 ? "W" : i == 1 ? "D" : i == 2 ? "4H" : "1H"
+
+f_txt(Z z) =>
+    f_lbl(z.tf) + (z.bull ? " demand " : " supply ") + str.tostring(z.sc + (z.tests == 0 ? 2 : z.tests == 1 ? 1 : 0)) + "/10" + (z.star != "" ? " ★ in " + z.star : "")
+
+f_kill(int i) =>
+    Z z = zones.get(i)
+    if keepOld
+        color c = z.bull ? C_D : C_S
+        box.set_extend(z.bx, extend.none)
+        box.set_right(z.bx, time)
+        box.set_bgcolor(z.bx, color.new(c, 95))
+        box.set_border_color(z.bx, color.new(c, 85))
+        box.set_text(z.bx, "")
+    else
+        box.delete(z.bx)
+    zones.remove(i)
+    true
+
+f_add(int i, float t0, float b0, int tm, bool up, int sc) =>
+    Z z = Z.new(t0, b0, tm, up, sc, i)
+    int hi = 9
+    for q in zones
+        if q.tf < math.min(i, hi) and q.bull == up and q.top >= b0 and q.bot <= t0
+            hi := q.tf
+    if hi < 9
+        z.star := f_lbl(hi)
+    color c = up ? C_D : C_S
+    z.bx := box.new(tm, t0, time, b0, xloc = xloc.bar_time, extend = extend.right, bgcolor = color.new(c, 90 - 3 * i), border_color = color.new(c, 30), border_width = i == 0 ? 3 : i == 1 ? 2 : 1, text = f_txt(z), text_size = size.tiny, text_color = c, text_halign = text.align_right, text_valign = up ? text.align_bottom : text.align_top)
+    zones.push(z)
+    int n = 0
+    int first = -1
+    for k = 0 to zones.size() - 1
+        Z q = zones.get(k)
+        if q.tf == i and q.bull == up
+            n += 1
+            if first < 0
+                first := k
+    if n > math.max(1, zMax + (i == 0 ? -1 : i == 3 ? 1 : 0))
+        f_kill(first)
+    if z.star != ""
+        alert(syminfo.ticker + ": new " + f_txt(z), alert.freq_once_per_bar_close)
+    true
+
+// on each close of timeframe i: count tests, check follow-through, age and breaks
+f_upd(int i, float h, float l, float c) =>
+    int k = zones.size() - 1
+    while k >= 0
+        Z z = zones.get(k)
+        if z.tf == i
+            bool dead = false
+            bool inNow = h >= z.bot and l <= z.top
+            if inNow and not z.inside
+                z.tests := z.tests + 1
+                box.set_border_style(z.bx, line.style_dashed)
+                if z.tests == 1
+                    alert(syminfo.ticker + ": price reached a fresh " + f_txt(z), alert.freq_once_per_bar_close)
+            z.inside := inNow
+            z.age := z.age + 1
+            if z.age <= 2 and (z.bull ? c < z.top : c > z.bot)
+                dead := true
+            if z.age > (i == 0 ? agW : i == 1 ? agD : i == 2 ? ag4 : ag1)
+                dead := true
+            if (z.bull ? c < z.bot : c > z.top) or z.tests >= sdTests
+                dead := true
+            if dead
+                f_kill(k)
+            else
+                box.set_text(z.bx, f_txt(z))
+        k -= 1
+    true
+
+// weekly zones also break on a daily close, daily zones on a 4H close
+f_brk(int i, float c) =>
+    int k = zones.size() - 1
+    while k >= 0
+        Z z = zones.get(k)
+        if z.tf == i and (z.bull ? c < z.bot : c > z.top)
+            f_kill(k)
+        k -= 1
+    true
+
+f_step(int i, bool on, int sec, int id, float t0, float b0, int tm, bool up, int sc, float h, float l, float c, int bt) =>
+    bool newBar = not na(bt) and bt != nz(bt[1])
+    bool newZ = not na(id) and id != nz(id[1]) and not na(t0)
+    if timeframe.in_seconds() <= sec and barstate.isconfirmed and newBar
+        if i == 1 or i == 2
+            f_brk(i - 1, c)
+        if on
+            f_upd(i, h, l, c)
+            if newZ
+                f_add(i, t0, b0, tm, up, sc)
+    true
+
+f_step(0, onW, 604800, wI, wT, wB, wZ, wU, wS, wH, wL, wC, wX)
+f_step(1, onD, 86400, dI, dT, dB, dZ, dU, dS, dH, dL, dC, dX)
+f_step(2, on4, 14400, fI, fT, fB, fZ, fU, fS, fH, fL, fC, fX)
+f_step(3, on1, 3600, hI, hT, hB, hZ, hU, hS, hH, hL, hC, hX)
