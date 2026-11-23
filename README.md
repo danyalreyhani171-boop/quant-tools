@@ -100,3 +100,26 @@ python3 engine/diagnose.py export.csv    # a TradingView export
 
 Pure standard library, no dependencies. Points where Pine's semantics are ambiguous are
 marked `PINE-NOTE` in the source.
+
+## Server
+
+`server/` turns the engine into a service: pull bars, run the engine, reconcile against the
+store, serve the result.
+
+```
+server/feed.py    provider interface + a synthetic feed for development
+server/store.py   SQLite schema, and the diff that turns engine output into events
+server/poll.py    the cycle: fetch → engine → reconcile → report
+server/api.py     read-only JSON API
+```
+
+```bash
+python3 server/poll.py --loop 300     # a cycle every 5 minutes
+python3 server/api.py --port 8787     # /api/signals /api/zones /api/events
+```
+
+The engine is deterministic, so each cycle re-runs it over the whole history and diffs the
+result against what is stored. Zones that appeared, changed or vanished become `formed`,
+`touched` and `invalidated` events. Nothing is reconstructed from a stream, so nothing drifts.
+
+Pure standard library. See `docs/backend.md` for the architecture, schema and build order.
