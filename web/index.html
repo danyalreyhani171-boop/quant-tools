@@ -331,6 +331,12 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
 .scard-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .metric .k { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-faint); }
 .metric .v { font-family: var(--f-mono); font-size: 15px; font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.minichart { border-top: 1px solid var(--line-soft); padding-top: 12px; }
+.minichart svg { width: 100%; height: auto; display: block; }
+.minichart .cap {
+  font-family: var(--f-mono); font-size: 10px; color: var(--fg-faint);
+  margin-top: 7px; display: flex; gap: 8px; flex-wrap: wrap;
+}
 .breakdown { display: grid; gap: 5px; border-top: 1px solid var(--line-soft); padding-top: 11px; }
 .bd-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline; font-family: var(--f-mono); font-size: 11px; }
 .bd-row .mk { text-align: center; }
@@ -690,7 +696,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   </div>
 
   <div class="term-tabs" role="tablist" aria-label="Terminal sections">
-    <button role="tab" id="ttab-live" aria-selected="true" data-t="live">In a zone<span class="count" id="cntLive">—</span></button>
+    <button role="tab" id="ttab-live" aria-selected="true" data-t="live">Signals<span class="count" id="cntLive">—</span></button>
     <button role="tab" id="ttab-near" aria-selected="false" data-t="near">Approaching<span class="count" id="cntNear">—</span></button>
     <button role="tab" id="ttab-all" aria-selected="false" data-t="all">All zones<span class="count" id="cntAll">—</span></button>
     <button role="tab" id="ttab-log" aria-selected="false" data-t="log">Zone log</button>
@@ -702,8 +708,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <div id="tp-live" role="tabpanel" aria-labelledby="ttab-live">
       <div class="cards" id="liveCards"></div>
       <p class="price-note" style="margin-top:16px">
-        Price is currently trading inside these zones. Each card shows the full score breakdown — which
-        points the zone earned and which it did not — so a level arrives with its reasoning attached.
+        One card per instrument, showing the zone in play — the one price is inside, or the nearest one
+        if it is not. The diagram is that instrument's own live zone stack with the last close on it, so
+        you can see the nesting at a glance, and the breakdown below says which points the zone earned
+        and which it did not.
       </p>
     </div>
 
@@ -903,6 +911,106 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   var INSTRUMENTS = ["XAUUSD", "GBPUSD", "NQ1!", "CL1!"];
 
+  // last close per instrument, so each diagram can place price against its own zones
+  var PRICES = { "XAUUSD": 3661.40, "GBPUSD": 1.30190, "NQ1!": 26872.50, "CL1!": 83.40 };
+
+  function zRange(s) {
+    var p = s.split("–").map(function (x) {
+      return parseFloat(x.replace(/,/g, "").trim());
+    });
+    return { lo: Math.min(p[0], p[1]), hi: Math.max(p[0], p[1]) };
+  }
+
+  function fmtPx(v) {
+    if (v < 10) return v.toFixed(5);
+    if (v < 1000) return v.toFixed(2);
+    return v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  var TF_ORDER = { "W": 0, "D": 1, "4H": 2, "1H": 3 };
+
+  /* A diagram of the instrument's own zone stack, with price on it.
+     Same idea as the explainer on the site, but drawn from the live levels. */
+  function miniChart(inst, focusTf) {
+    var mine = ZONES.filter(function (z) { return z[0] === inst; });
+    if (!mine.length) return "";
+
+    var px = PRICES[inst];
+    var vals = [px];
+    mine.forEach(function (z) {
+      var r = zRange(z[3]);
+      vals.push(r.lo, r.hi);
+    });
+    var lo = Math.min.apply(null, vals);
+    var hi = Math.max.apply(null, vals);
+    var pad = (hi - lo) * 0.14 || Math.abs(hi) * 0.001 || 1;
+    lo -= pad; hi += pad;
+
+    // Bands on the left, labels in their own column on the right. Thin bands sit only a
+    // few pixels apart, so labels are spread to a minimum gap and joined to their band by
+    // a connector rather than written on top of it.
+    var W = 560, H = 172, mT = 14, mB = 14;
+    var xL = 8, xR = 268, labX = 292;
+    function y(v) { return mT + (hi - v) / (hi - lo) * (H - mT - mB); }
+
+    // widest band first so the nesting reads correctly
+    var ordered = mine.slice().sort(function (a, b) {
+      return TF_ORDER[a[1]] - TF_ORDER[b[1]];
+    });
+
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
+            inst + ' zone stack with current price">';
+
+    var items = [];
+    ordered.forEach(function (z) {
+      var r = zRange(z[3]);
+      var col = z[2] === "demand" ? "var(--bull)" : "var(--bear)";
+      var focus = Boolean(focusTf && z[1] === focusTf);
+      var yt = y(r.hi), yb = y(r.lo);
+      s += '<rect x="' + xL + '" y="' + yt.toFixed(1) + '" width="' + (xR - xL) +
+           '" height="' + Math.max(2.5, yb - yt).toFixed(1) + '" fill="' + col +
+           '" fill-opacity="' + (focus ? 0.24 : 0.09) + '" stroke="' + col +
+           '" stroke-width="' + (focus ? 1.8 : 0.9) + '"/>';
+      items.push({
+        y: (yt + yb) / 2, col: col, focus: focus,
+        // z[4] is already the score as displayed — do not add freshness again
+        txt: z[1] + ' ' + z[2] + ' ' + z[4] + '/10' + (z[7] ? ' ★ in ' + z[7] : '')
+      });
+    });
+
+    // spread the labels downward to a minimum gap, then lift the whole run if it overflows
+    items.sort(function (a, b) { return a.y - b.y; });
+    var gap = 15, cursor = mT + 4;
+    items.forEach(function (it) {
+      it.ly = Math.max(it.y, cursor);
+      cursor = it.ly + gap;
+    });
+    var over = (cursor - gap) - (H - 6);
+    if (over > 0) items.forEach(function (it) { it.ly -= over; });
+
+    items.forEach(function (it) {
+      s += '<path d="M' + xR + ' ' + it.y.toFixed(1) + ' L' + (xR + 9) + ' ' + it.y.toFixed(1) +
+           ' L' + (labX - 11) + ' ' + it.ly.toFixed(1) + ' L' + (labX - 4) + ' ' + it.ly.toFixed(1) +
+           '" fill="none" stroke="' + it.col + '" stroke-width="0.9" opacity="0.5"/>';
+      s += '<text x="' + labX + '" y="' + (it.ly + 3.6).toFixed(1) +
+           '" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + it.col +
+           '" opacity="' + (it.focus ? 1 : 0.7) + '">' + it.txt + '</text>';
+    });
+
+    // last close, drawn over the bands
+    var yp = y(px);
+    s += '<line x1="' + xL + '" y1="' + yp.toFixed(1) + '" x2="' + xR + '" y2="' + yp.toFixed(1) +
+         '" stroke="var(--fg)" stroke-width="1.2" stroke-dasharray="3 3"/>';
+    s += '<circle cx="' + (xL + 6) + '" cy="' + yp.toFixed(1) + '" r="3.2" fill="var(--fg)"/>';
+    var lift = yp < mT + 14 ? 14 : -7;
+    s += '<text x="' + (xL + 14) + '" y="' + (yp + lift).toFixed(1) +
+         '" font-family="IBM Plex Mono, monospace" font-size="10.5" font-weight="500" ' +
+         'fill="var(--fg)">' + fmtPx(px) + '</text>';
+
+    s += '</svg>';
+    return s;
+  }
+
   // score breakdowns for the zones price is sitting in
   var BREAKDOWNS = {
     "XAUUSD|D": [
@@ -933,12 +1041,26 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       ["Fair value gap", false, 0, "no imbalance"],
       ["Freshness", true, 2, "untested"]
     ],
-    "GBPUSD|1H": [
-      ["Departure strength", false, 1, "1.6 ATR — only just clears the gate"],
+    "GBPUSD|4H": [
+      ["Departure strength", true, 3, "3.4 ATR off the base"],
+      ["Base tightness", true, 2, "2 base candles"],
+      ["Break of structure", true, 2, "took out the prior swing low"],
+      ["Fair value gap", true, 1, "imbalance left in the leg"],
+      ["Freshness", true, 2, "untested"]
+    ],
+    "NQ1!|4H": [
+      ["Departure strength", false, 1, "1.7 ATR — only just clears the gate"],
+      ["Base tightness", true, 2, "3 base candles"],
+      ["Break of structure", false, 0, "did not clear the prior swing"],
+      ["Fair value gap", true, 1, "gap between bar 1 and bar 3"],
+      ["Freshness", true, 2, "untested"]
+    ],
+    "CL1!|4H": [
+      ["Departure strength", true, 2, "2.3 ATR"],
       ["Base tightness", true, 2, "2 base candles"],
       ["Break of structure", true, 2, "cleared the prior swing high"],
       ["Fair value gap", false, 0, "no imbalance"],
-      ["Freshness", true, 2, "untested"]
+      ["Freshness", false, 1, "tested once"]
     ]
   };
 
@@ -1126,18 +1248,31 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   /* ── terminal: in-zone cards ──────────────────── */
   var lc = document.getElementById("liveCards");
-  ZONES.filter(function (z) { return z[9]; }).forEach(function (z) {
-    var key = z[0] + "|" + z[1];
-    var bd = BREAKDOWNS[key];
-    var card = el("div", "scard live");
+
+  // one card per instrument: the zone price is inside, or failing that the nearest one
+  INSTRUMENTS.forEach(function (inst) {
+    var mine = ZONES.filter(function (z) { return z[0] === inst; });
+    if (!mine.length) return;
+    var inZone = mine.filter(function (z) { return z[9]; })
+                     .sort(function (a, b) { return b[4] - a[4]; });
+    var z = inZone.length ? inZone[0]
+          : mine.slice().sort(function (a, b) { return a[8] - b[8]; })[0];
+    var live = Boolean(z[9]);
+    var bd = BREAKDOWNS[z[0] + "|" + z[1]];
+
+    var card = el("div", "scard" + (live ? " live" : ""));
 
     var head = el("div", "scard-head");
-    head.appendChild(el("span", "p", z[0]));
+    head.appendChild(el("span", "p", inst));
     head.appendChild(el("span", "tf-chip", z[1]));
     var pill = el("span", "zone-pill zp-" + z[2]);
     pill.appendChild(document.createTextNode(z[2]));
     if (z[7]) pill.appendChild(el("span", "star", "★ in " + z[7]));
     head.appendChild(pill);
+    var verdict = el("span", "verdict " + (live ? (z[2] === "demand" ? "v-bull" : "v-bear") : "v-none"),
+                     live ? "price in zone" : z[8].toFixed(1) + "% away");
+    verdict.style.marginLeft = "auto";
+    head.appendChild(verdict);
     card.appendChild(head);
 
     var main = el("div", "scard-main");
@@ -1154,6 +1289,16 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       mets.appendChild(d);
     });
     main.appendChild(mets);
+
+    // the instrument's whole zone stack, with price on it
+    var mc = el("div", "minichart");
+    mc.innerHTML = miniChart(inst, z[1]);
+    var cap = el("div", "cap");
+    cap.appendChild(el("span", null, mine.length + " live zone" + (mine.length === 1 ? "" : "s")));
+    cap.appendChild(el("span", null, "·"));
+    cap.appendChild(el("span", null, "highlighted: " + z[1] + " " + z[2]));
+    mc.appendChild(cap);
+    main.appendChild(mc);
 
     if (bd) {
       var b = el("div", "breakdown");
@@ -1176,7 +1321,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     var foot = el("div", "scard-foot");
     foot.appendChild(el("span", null, "age " + z[6]));
     foot.appendChild(el("span", null, "·"));
-    foot.appendChild(el("span", null, "price inside"));
+    foot.appendChild(el("span", null, live ? "price inside" : "waiting for price"));
     if (z[7]) foot.appendChild(el("span", "inside-flag", "◆ confluence"));
     card.appendChild(foot);
     lc.appendChild(card);
@@ -1241,8 +1386,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   });
 
   // tab counts come from the data, so they can never drift from the tables
-  document.getElementById("cntLive").textContent =
-    String(ZONES.filter(function (z) { return z[9]; }).length);
+  document.getElementById("cntLive").textContent = String(INSTRUMENTS.filter(function (i) {
+    return ZONES.some(function (z) { return z[0] === i; });
+  }).length);
   document.getElementById("cntNear").textContent =
     String(ZONES.filter(function (z) { return !z[9] && z[8] <= 2; }).length);
   document.getElementById("cntAll").textContent = String(ZONES.length);
