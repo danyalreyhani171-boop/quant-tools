@@ -296,6 +296,28 @@ footer .fine { font-family: var(--f-mono); font-size: 11.5px; color: var(--fg-fa
   padding: 4px 10px; border-radius: 2px; color: var(--bull); background: var(--bull-soft);
   border: 1px solid color-mix(in srgb, var(--bull) 30%, transparent); white-space: nowrap;
 }
+.acct-pill.preview {
+  color: var(--warn); background: var(--warn-soft);
+  border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+}
+
+/* waitlist */
+.waitlist { display: grid; gap: 9px; margin-top: 24px; }
+.wl-label {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--fg-faint);
+}
+.wl-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.wl-row input {
+  flex: 1 1 170px; min-width: 0;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 3px;
+  color: var(--fg); font-family: var(--f-mono); font-size: 13px; padding: 10px 12px;
+}
+.wl-row input::placeholder { color: var(--fg-faint); }
+.wl-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.wl-row .btn { flex: 0 0 auto; }
+.wl-msg { font-family: var(--f-mono); font-size: 11.5px; color: var(--bull); }
+.wl-msg.err { color: var(--warn); }
 
 .census { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
 @media (max-width: 760px) { .census { grid-template-columns: repeat(2, 1fr); } }
@@ -436,11 +458,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <span><b>4</b> instruments</span>
         </div>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#pricing">Start — £28.99/mo</a>
-          <a class="btn btn-ghost" href="#build">How a zone is built</a>
+          <a class="btn btn-primary" href="#pricing">Join the waitlist</a>
+          <a class="btn btn-ghost" href="#terminal">See the terminal</a>
         </div>
         <p class="price-note" style="margin-top:14px">
-          Cancel anytime. <b>No performance claims</b> — see the disclosure before you subscribe.
+          <b>£28.99/month at launch.</b> No performance claims — see the disclosure below.
         </p>
       </div>
 
@@ -637,7 +659,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <div class="pricing">
       <div class="price-card">
         <div class="eyebrow">DRQuantMTF</div>
-        <div class="price-amt"><span class="cur">£</span><span class="big">28.99</span><span class="per">/month</span></div>
+        <div class="price-amt"><span class="cur">£</span><span class="big">28.99</span><span class="per">/month at launch</span></div>
         <div class="incl">
           <div><span class="mk">+</span><span>Scored zones on all four instruments, W/D/4H/1H</span></div>
           <div><span class="mk">+</span><span>Confluence marking where timeframes agree</span></div>
@@ -646,9 +668,20 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <div><span class="mk">+</span><span>Webhook payloads for your own tooling</span></div>
           <div><span class="mk">+</span><span>Nothing to install — the engine runs on our side</span></div>
         </div>
-        <a class="btn btn-primary" href="#" style="margin-top:24px; width:100%; text-align:center">Subscribe</a>
-        <a class="btn btn-ghost" href="#terminal" style="margin-top:8px; width:100%; text-align:center">See the terminal first</a>
-        <p class="price-note" style="margin-top:12px; text-align:center">Cancel anytime</p>
+        <form class="waitlist" id="waitlistForm" name="waitlist" method="POST" data-netlify="true">
+          <input type="hidden" name="form-name" value="waitlist">
+          <label class="wl-label" for="wlEmail">Email me when it goes live</label>
+          <div class="wl-row">
+            <input id="wlEmail" name="email" type="email" required autocomplete="email"
+                   placeholder="you@example.com">
+            <button class="btn btn-primary" type="submit">Notify me</button>
+          </div>
+          <p class="wl-msg" id="wlMsg" hidden></p>
+        </form>
+        <a class="btn btn-ghost" href="#terminal" style="margin-top:10px; width:100%; text-align:center">See the terminal</a>
+        <p class="price-note" style="margin-top:12px; text-align:center">
+          No card needed · cancel anytime once live
+        </p>
       </div>
 
       <div style="display:grid; gap:20px; align-content:start">
@@ -685,8 +718,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 <main id="view-terminal" hidden>
   <div class="preview-banner">
     <div class="wrap">
-      <span>◆ Preview of the member terminal — example data, not a live feed.</span>
-      <a href="#pricing">← back to the site</a>
+      <span><b>DEMO</b> — this is the member terminal as it will look. The zones, scores and
+      candles below are example data on a simulated tick, not a live feed.</span>
+      <a href="#pricing">← join the waitlist</a>
     </div>
   </div>
 
@@ -695,7 +729,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       <div class="term-title">
         <h2>Terminal</h2>
         <span class="eyebrow">4 instruments · W/D/4H/1H · evaluated on bar close</span>
-        <span class="acct-pill">Active · £28.99 · renews 23 Dec</span>
+        <span class="acct-pill preview">Preview · not live yet</span>
       </div>
       <div class="census" id="census"></div>
     </div>
@@ -883,6 +917,39 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 <script>
 (function () {
   "use strict";
+
+  /* ── waitlist ─────────────────────────────────────
+     Posted as a form encoding to the page's own origin, which is what Netlify Forms and
+     most static hosts expect. Inside the artifact sandbox there is nothing to receive it,
+     so the failure is caught and the viewer is told plainly rather than left hanging. */
+  var wlForm = document.getElementById("waitlistForm");
+  var wlMsg = document.getElementById("wlMsg");
+  if (wlForm) {
+    wlForm.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var email = (document.getElementById("wlEmail").value || "").trim();
+      if (!email) return;
+
+      var say = function (text, bad) {
+        wlMsg.textContent = text;
+        wlMsg.className = "wl-msg" + (bad ? " err" : "");
+        wlMsg.hidden = false;
+      };
+
+      var body = new URLSearchParams({ "form-name": "waitlist", email: email }).toString();
+      fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body
+      }).then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+        wlForm.reset();
+        say("Thanks — you're on the list. We'll email you when it goes live.");
+      }).catch(function () {
+        say("Sign-up isn't connected on this preview. It works on the live site.", true);
+      });
+    });
+  }
 
   function el(tag, cls, txt) {
     var n = document.createElement(tag);

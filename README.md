@@ -133,3 +133,20 @@ is Windows-only and needs the terminal open on the same machine.
 Set `Params(session_offset=...)` from `MT5Feed.detect_session_offset()`. The broker's server
 timezone decides when the daily and weekly candle opens, so without it the D and W zones will
 not match the chart. Re-check after each DST change.
+
+## Hosting the site
+
+`web/index.html` is written for the Artifact viewer, which wraps it in a document skeleton.
+`web/build.py` produces the standalone version any static host can serve.
+
+```bash
+python3 web/build.py --serve     # builds web/dist/ and serves it on :8000
+```
+
+`web/dist/` gets index.html, a 404, robots.txt, sitemap.xml and security headers. It is a
+static site with no backend — free on Cloudflare Pages, Netlify or GitHub Pages.
+
+The waitlist form posts to the page's own origin, which Netlify Forms handles with no backend.
+On a host without form handling it fails gracefully and says so.
+
+`dist/` is generated and not committed.
