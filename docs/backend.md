@@ -140,7 +140,7 @@ CREATE TABLE zones (
   id          TEXT PRIMARY KEY,   -- instrument|tf|side|zone_time
   instrument  TEXT NOT NULL,
   tf          TEXT NOT NULL,      -- W D 4H 1H
-  side        TEXT NOT NULL,      -- demand supply
+  side        TEXT NOT NULL,      -- bullish bearish
   top         REAL NOT NULL,
   bottom      REAL NOT NULL,
   zone_time   INTEGER NOT NULL,   -- open of the oldest base candle

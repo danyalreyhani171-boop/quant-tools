@@ -156,8 +156,8 @@ body::before {
   border-radius: 2px; font-family: var(--f-mono); font-size: 10.5px;
   border: 1px solid transparent; white-space: nowrap;
 }
-.zp-demand { color: var(--bull); background: var(--bull-soft); border-color: color-mix(in srgb, var(--bull) 30%, transparent); }
-.zp-supply { color: var(--bear); background: var(--bear-soft); border-color: color-mix(in srgb, var(--bear) 30%, transparent); }
+.zp-bullish { color: var(--bull); background: var(--bull-soft); border-color: color-mix(in srgb, var(--bull) 30%, transparent); }
+.zp-bearish { color: var(--bear); background: var(--bear-soft); border-color: color-mix(in srgb, var(--bear) 30%, transparent); }
 .zp-none { color: var(--fg-faint); background: var(--surface-2); border-color: var(--line); }
 .star { color: var(--accent); }
 .zrow .score {
@@ -444,7 +444,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         <div class="eyebrow">Direction &amp; Resistance · Quantitative Medium Frequency Trading</div>
         <h1>Every level<br>worth watching,<br><em>graded</em>.</h1>
         <p class="lede">
-          Weekly, daily, 4H and 1H supply and demand zones built by one set of rules, scored out of ten,
+          Weekly, daily, 4H and 1H bearish and bullish zones built by one set of rules, scored out of ten,
           and marked where the timeframes agree. You get the level, how much it is worth, and the price
           that proves it wrong.
         </p>
@@ -550,9 +550,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       </div>
       <div class="panel">
         <span class="tag">Reading the label</span>
-        <h3>D demand 9/10 ★ in W</h3>
+        <h3>D bullish 9/10 ★ in W</h3>
         <p>
-          A daily demand zone scoring nine, nested inside a weekly demand zone. The timeframe tells you
+          A daily bullish zone scoring nine, nested inside a weekly bullish zone. The timeframe tells you
           the weight, the side tells you the direction, the score tells you the quality, and the ★ tells
           you a higher timeframe independently marked the same level.
         </p>
@@ -599,7 +599,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <span class="n">3</span>
           <div>
             <h4>Close beyond the far edge</h4>
-            <p>Not a wick through — a close. Demand dies on a close below the bottom, supply on a close
+            <p>Not a wick through — a close. A bullish zone dies on a close below the bottom, a bearish one on a close
               above the top. Weekly zones also break on a <i>daily</i> close and daily zones on a
               <i>4H</i> close, so a higher-timeframe level can't survive on a technicality after price
               has clearly gone through it.</p>
@@ -690,7 +690,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <p>
             <strong>No win rate, profit factor or expectancy figure is published anywhere on this site,
             and none will be until it has been measured on logged out-of-sample zones with costs
-            included.</strong> Any such figure quoted for supply and demand trading elsewhere is an
+            included.</strong> Any such figure quoted for bearish and bullish trading elsewhere is an
             unverified in-house number.
           </p>
           <p>
@@ -833,7 +833,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
         <div class="cfg-group">
           <h4>Minimum score</h4>
-          <p>Nothing below this is sent. Alerts fire on 1H and 4H zones only; weekly and daily zones still appear in the terminal and still supply the ★ confluence marking.</p>
+          <p>Nothing below this is sent. Alerts fire on 1H and 4H zones only; weekly and daily zones still appear in the terminal and still bearish the ★ confluence marking.</p>
           <div class="slider-row">
             <input type="range" id="minScore" min="4" max="10" value="7" step="1" aria-label="Minimum score to alert">
             <div class="toggle-row" style="border:0; padding:0">
@@ -884,7 +884,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   "instrument": "GBPUSD",
   "timeframe":  "4H",
   "event":      "first_touch",
-  "side":       "demand",
+  "side":       "bullish",
   "score":      8,
   "top":        1.30160,
   "bottom":     1.29910,
@@ -957,7 +957,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     if (txt != null) n.textContent = txt;
     return n;
   }
-  function sideColor(s) { return s === "demand" ? "var(--bull)" : "var(--bear)"; }
+  function sideColor(s) { return s === "bullish" ? "var(--bull)" : "var(--bear)"; }
   function scoreColor(v) {
     return v >= 8 ? "var(--bull)" : v >= 6 ? "var(--fg)" : "var(--fg-dim)";
   }
@@ -967,19 +967,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
      Illustrative only — not a live feed. */
   var ZONES = [
     // inst,   tf,   side,     range,                score, tests, age,  star,  dist(%) inside
-    ["XAUUSD", "D",  "supply", "3,642 – 3,689",      8, 2, "5d",  "W",   0,    true],
-    ["XAUUSD", "4H", "supply", "3,655 – 3,674",      7, 0, "16h", "D",   0,    true],
-    ["XAUUSD", "W",  "supply", "3,712 – 3,801",      7, 1, "9w",  "",    1.4,  false],
-    ["XAUUSD", "1H", "demand", "3,588 – 3,601",      5, 0, "7h",  "",    1.9,  false],
-    ["GBPUSD", "4H", "supply", "1.3438 – 1.3455",   10, 0, "13d", "",    3.2,  false],
-    ["GBPUSD", "4H", "supply", "1.3339 – 1.3355",   10, 0, "12d", "",    2.5,  false],
-    ["NQ1!",   "D",  "supply", "27,120 – 27,480",    8, 1, "4d",  "",    1.2,  false],
-    ["NQ1!",   "4H", "demand", "26,410 – 26,780",    6, 0, "19h", "",    0.4,  false],
-    ["NQ1!",   "W",  "demand", "25,400 – 26,050",    7, 0, "11w", "",    3.2,  false],
-    ["CL1!",   "D",  "supply", "85.20 – 86.40",      8, 0, "6d",  "",    2.2,  false],
-    ["CL1!",   "4H", "supply", "83.90 – 84.35",      7, 1, "14h", "D",   0.6,  false],
-    ["CL1!",   "1H", "demand", "82.60 – 83.05",      6, 0, "5h",  "",    0.5,  false],
-    ["CL1!",   "W",  "demand", "78.40 – 80.10",      7, 0, "13w", "",    4.0,  false]
+    ["XAUUSD", "D",  "bearish", "3,642 – 3,689",      8, 2, "5d",  "W",   0,    true],
+    ["XAUUSD", "4H", "bearish", "3,655 – 3,674",      7, 0, "16h", "D",   0,    true],
+    ["XAUUSD", "W",  "bearish", "3,712 – 3,801",      7, 1, "9w",  "",    1.4,  false],
+    ["XAUUSD", "1H", "bullish", "3,588 – 3,601",      5, 0, "7h",  "",    1.9,  false],
+    ["GBPUSD", "4H", "bearish", "1.3438 – 1.3455",   10, 0, "13d", "",    3.2,  false],
+    ["GBPUSD", "4H", "bearish", "1.3339 – 1.3355",   10, 0, "12d", "",    2.5,  false],
+    ["NQ1!",   "D",  "bearish", "27,120 – 27,480",    8, 1, "4d",  "",    1.2,  false],
+    ["NQ1!",   "4H", "bullish", "26,410 – 26,780",    6, 0, "19h", "",    0.4,  false],
+    ["NQ1!",   "W",  "bullish", "25,400 – 26,050",    7, 0, "11w", "",    3.2,  false],
+    ["CL1!",   "D",  "bearish", "85.20 – 86.40",      8, 0, "6d",  "",    2.2,  false],
+    ["CL1!",   "4H", "bearish", "83.90 – 84.35",      7, 1, "14h", "D",   0.6,  false],
+    ["CL1!",   "1H", "bullish", "82.60 – 83.05",      6, 0, "5h",  "",    0.5,  false],
+    ["CL1!",   "W",  "bullish", "78.40 – 80.10",      7, 0, "13w", "",    4.0,  false]
   ];
 
   var INSTRUMENTS = ["XAUUSD", "GBPUSD", "NQ1!", "CL1!"];
@@ -1124,7 +1124,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     // zones behind the candles
     var self = this, placed = [];
     this.zones.forEach(function (z) {
-      var col = z.side === "demand" ? C.bull : C.bear;
+      var col = z.side === "bullish" ? C.bull : C.bear;
       var focus = z.tf === self.focusTf;
       var yt = y(z.hi), yb = y(z.lo);
       g.globalAlpha = focus ? 0.22 : 0.085;
@@ -1244,17 +1244,17 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   };
 
   var LOG = [
-    ["23 Nov 04:00", "CL1!",   "4H", "supply", 7, "first touch",    "holding"],
-    ["22 Nov 16:00", "GBPUSD", "4H", "demand", 8, "first touch",    "holding"],
-    ["22 Nov 12:00", "XAUUSD", "D",  "supply", 8, "second test",    "holding"],
-    ["22 Nov 08:00", "GBPUSD", "1H", "demand", 7, "zone formed",    "untested"],
-    ["21 Nov 20:00", "CL1!",   "1H", "demand", 6, "zone formed",    "untested"],
-    ["21 Nov 16:00", "NQ1!",   "4H", "supply", 7, "third test",     "removed — test cap"],
-    ["21 Nov 09:00", "XAUUSD", "4H", "supply", 7, "zone formed",    "untested"],
-    ["20 Nov 21:00", "NQ1!",   "D",  "demand", 8, "far-edge close", "broke"],
-    ["20 Nov 14:00", "CL1!",   "D",  "supply", 8, "zone formed",    "untested"],
-    ["20 Nov 10:00", "GBPUSD", "4H", "supply", 6, "second test",    "held"],
-    ["19 Nov 18:00", "XAUUSD", "1H", "demand", 5, "age limit",      "expired"]
+    ["23 Nov 04:00", "CL1!",   "4H", "bearish", 7, "first touch",    "holding"],
+    ["22 Nov 16:00", "GBPUSD", "4H", "bullish", 8, "first touch",    "holding"],
+    ["22 Nov 12:00", "XAUUSD", "D",  "bearish", 8, "second test",    "holding"],
+    ["22 Nov 08:00", "GBPUSD", "1H", "bullish", 7, "zone formed",    "untested"],
+    ["21 Nov 20:00", "CL1!",   "1H", "bullish", 6, "zone formed",    "untested"],
+    ["21 Nov 16:00", "NQ1!",   "4H", "bearish", 7, "third test",     "removed — test cap"],
+    ["21 Nov 09:00", "XAUUSD", "4H", "bearish", 7, "zone formed",    "untested"],
+    ["20 Nov 21:00", "NQ1!",   "D",  "bullish", 8, "far-edge close", "broke"],
+    ["20 Nov 14:00", "CL1!",   "D",  "bearish", 8, "zone formed",    "untested"],
+    ["20 Nov 10:00", "GBPUSD", "4H", "bearish", 6, "second test",    "held"],
+    ["19 Nov 18:00", "XAUUSD", "1H", "bullish", 5, "age limit",      "expired"]
   ];
 
   /* ── landing board: nearest zone per instrument ── */
@@ -1330,7 +1330,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   var ZSCENES = {
     anatomy: function () {
       var s = "";
-      s += zBox(138, 146, 706, 170, "demand", "4H demand 9/10", 1.5);
+      s += zBox(138, 146, 706, 170, "bullish", "4H bullish 9/10", 1.5);
       s += '<line x1="138" y1="146" x2="706" y2="146" stroke="var(--bull)" stroke-width="1" stroke-dasharray="4 4"/>';
       s += zCandle(80,  60, 100,  55, 105, 17);
       s += zCandle(118, 100, 140,  96, 146, 17);
@@ -1356,9 +1356,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     },
     confluence: function () {
       var s = "";
-      s += zBox(60, 130, 706, 225, "demand", "W demand 7/10", 3);
-      s += zBox(60, 155, 706, 210, "demand", "D demand 8/10  ★ in W", 2);
-      s += zBox(60, 175, 706, 192, "demand", "4H demand 9/10  ★ in D", 1);
+      s += zBox(60, 130, 706, 225, "bullish", "W bullish 7/10", 3);
+      s += zBox(60, 155, 706, 210, "bullish", "D bullish 8/10  ★ in W", 2);
+      s += zBox(60, 175, 706, 192, "bullish", "4H bullish 9/10  ★ in D", 1);
       s += zPath([[60, 58], [150, 112], [220, 90], [300, 162], [345, 188],
                   [410, 148], [480, 166], [560, 104], [640, 70], [706, 50]]);
       s += '<circle cx="345" cy="188" r="4" fill="var(--accent)"/>';
@@ -1369,7 +1369,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     },
     death: function () {
       var s = "";
-      s += zBox(60, 138, 706, 166, "demand", "4H demand", 1.5);
+      s += zBox(60, 138, 706, 166, "bullish", "4H bullish", 1.5);
       s += zPath([[60, 58], [140, 132], [185, 152], [245, 92], [305, 148],
                   [360, 108], [425, 155], [470, 128], [540, 182], [620, 214], [706, 236]]);
       [[185, 152, "1"], [305, 148, "2"], [425, 155, "3"]].forEach(function (t) {
@@ -1402,7 +1402,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   var ztabs = Array.prototype.slice.call(document.querySelectorAll(".zone-tabs button"));
   function zdraw(key) {
     zdg.innerHTML = '<svg viewBox="0 0 ' + ZW + ' ' + ZH + '" role="img" aria-label="' +
-                    key + ' supply and demand diagram">' + ZSCENES[key]() + '</svg>';
+                    key + ' bearish and bullish diagram">' + ZSCENES[key]() + '</svg>';
     zdgCap.innerHTML = ZCAPS[key];
     ztabs.forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.k === key)); });
     zdg.setAttribute("aria-labelledby", "ztab-" + key);
@@ -1448,7 +1448,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     pill.appendChild(document.createTextNode(z[2]));
     if (z[7]) pill.appendChild(el("span", "star", "★ in " + z[7]));
     head.appendChild(pill);
-    var verdict = el("span", "verdict " + (live ? (z[2] === "demand" ? "v-bull" : "v-bear") : "v-none"),
+    var verdict = el("span", "verdict " + (live ? (z[2] === "bullish" ? "v-bull" : "v-bear") : "v-none"),
                      live ? "price in zone" : z[8].toFixed(1) + "% away");
     verdict.style.marginLeft = "auto";
     head.appendChild(verdict);
@@ -1473,7 +1473,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     var mc = el("div", "minichart");
     var cv = document.createElement("canvas");
     cv.setAttribute("role", "img");
-    cv.setAttribute("aria-label", inst + " candles with its live supply and demand zones");
+    cv.setAttribute("aria-label", inst + " candles with its live bearish and bullish zones");
     mc.appendChild(cv);
     var cap = el("div", "cap");
     cap.appendChild(el("span", "tick-dot", ""));

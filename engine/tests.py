@@ -1,5 +1,5 @@
 """
-Tests for the supply & demand engine.
+Tests for the bearish & bullish engine.
 
 Each test pins one rule from the Pine source against hand-built bars where the
 expected answer is known by construction. Run: python3 engine/tests.py
@@ -100,12 +100,12 @@ check("pivot_high finds the peak two bars back", pivot_high(piv, 4) == 105.0,
 check("pivot_high is None when not yet confirmed", pivot_high(piv, 3) is None)
 check("pivot_low mirrors it", pivot_low(piv, 4) == 95.0, f"got {pivot_low(piv, 4)}")
 
-section("Zone detection — demand")
+section("Zone detection — bullish")
 
 p = Params()
 bars = demand_setup()
 evs = detect(bars, p.sd_base, p.sd_bh, p)
-check("one demand zone detected", len(evs) == 1, f"got {len(evs)}")
+check("one bullish zone detected", len(evs) == 1, f"got {len(evs)}")
 if evs:
     e = evs[0]
     check("marked bullish", e.bull)
@@ -133,11 +133,11 @@ check("v2 keeps it, stopping at the last candle that fits",
 check("…and the recovered zone is inside the height cap",
       bool(v2) and v2[0].height_atr <= p.sd_bh, f"{v2[0].height_atr:.2f} ATR" if v2 else "-")
 
-section("Zone detection — supply")
+section("Zone detection — bearish")
 
 bars = supply_setup()
 evs = detect(bars, p.sd_base, p.sd_bh, p)
-check("one supply zone detected", len(evs) == 1, f"got {len(evs)}")
+check("one bearish zone detected", len(evs) == 1, f"got {len(evs)}")
 if evs:
     e = evs[0]
     check("marked bearish", not e.bull)
@@ -201,7 +201,7 @@ IN   = (100.8, 100.2, 100.5)      # a bar trading inside it
 
 
 def mk_book(survive_grace: bool = True, **kw) -> ZoneBook:
-    """A fresh 4H demand zone at 100.0–101.0, past its two grace bars by default."""
+    """A fresh 4H bullish zone at 100.0–101.0, past its two grace bars by default."""
     bk = ZoneBook(Params(**kw))
     bk.add(2, ZoneEvent(top=101.0, bot=100.0, time=0, bull=True, score=6, bar_index=0), 0)
     if survive_grace:
@@ -213,7 +213,7 @@ def mk_book(survive_grace: bool = True, **kw) -> ZoneBook:
 # the grace rule, exactly as written
 bk = mk_book(survive_grace=False)
 bk.update(2, *IN)
-check("BUG: a fresh demand zone dies the moment price trades back into it, because "
+check("BUG: a fresh bullish zone dies the moment price trades back into it, because "
       "the grace test is `close < top` rather than `close < bottom`",
       len(bk.live(2)) == 0 and bk.dead[-1].died_of == "no-follow-through",
       bk.dead[-1].died_of if bk.dead else "still alive")
@@ -287,7 +287,7 @@ check("opposite sides are not starred", bk.zones[-1].star == "")
 bk = ZoneBook(Params(z_max=3))
 for i in range(5):
     bk.add(2, ZoneEvent(top=101.0 + i, bot=100.0 + i, time=i, bull=True, score=6, bar_index=i), i)
-check("4H keeps at most 3 demand zones", len(bk.live(2)) == 3, f"got {len(bk.live(2))}")
+check("4H keeps at most 3 bullish zones", len(bk.live(2)) == 3, f"got {len(bk.live(2))}")
 bk2 = ZoneBook(Params(z_max=3))
 for i in range(6):
     bk2.add(0, ZoneEvent(top=101.0 + i, bot=100.0 + i, time=i, bull=True, score=6, bar_index=i), i)

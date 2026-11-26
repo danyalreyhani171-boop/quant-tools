@@ -152,7 +152,7 @@ f_lbl(int i) =>
     i == 0 ? "W" : i == 1 ? "D" : i == 2 ? "4H" : "1H"
 
 f_txt(Z z) =>
-    f_lbl(z.tf) + (z.bull ? " demand " : " supply ") + str.tostring(z.sc + (z.tests == 0 ? 2 : z.tests == 1 ? 1 : 0)) + "/10" + (z.star != "" ? " ★ in " + z.star : "")
+    f_lbl(z.tf) + (z.bull ? " bullish " : " bearish ") + str.tostring(z.sc + (z.tests == 0 ? 2 : z.tests == 1 ? 1 : 0)) + "/10" + (z.star != "" ? " ★ in " + z.star : "")
 
 f_kill(int i) =>
     Z z = zones.get(i)

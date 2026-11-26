@@ -95,8 +95,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       border:1px solid var(--line);border-radius:2px;padding:1px 5px}
 .zp{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:2px;
     font-family:var(--f-mono);font-size:10.5px;border:1px solid transparent;white-space:nowrap}
-.zp-demand{color:var(--bull);background:var(--bull-soft);border-color:color-mix(in srgb,var(--bull) 30%,transparent)}
-.zp-supply{color:var(--bear);background:var(--bear-soft);border-color:color-mix(in srgb,var(--bear) 30%,transparent)}
+.zp-bullish{color:var(--bull);background:var(--bull-soft);border-color:color-mix(in srgb,var(--bull) 30%,transparent)}
+.zp-bearish{color:var(--bear);background:var(--bear-soft);border-color:color-mix(in srgb,var(--bear) 30%,transparent)}
 .star{color:var(--accent)}
 .verdict{margin-left:auto;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;
          text-transform:uppercase;padding:3px 9px;border-radius:2px;white-space:nowrap}
@@ -237,7 +237,7 @@ var DATA = __DATA__;
   function el(t, c, x) { var n = document.createElement(t); if (c) n.className = c;
     if (x != null) n.textContent = x; return n; }
   function scoreColor(v) { return v >= 8 ? "var(--bull)" : v >= 6 ? "var(--fg)" : "var(--fg-dim)"; }
-  function sideColor(s) { return s === "demand" ? "var(--bull)" : "var(--bear)"; }
+  function sideColor(s) { return s === "bullish" ? "var(--bull)" : "var(--bear)"; }
   function fmtPx(v) {
     if (v == null) return "—";
     if (Math.abs(v) < 10) return v.toFixed(5);
@@ -362,7 +362,7 @@ var DATA = __DATA__;
 
     var self = this, placed = [];
     this.zones.forEach(function (z) {
-      var col = z.side === "demand" ? C.bull : C.bear;
+      var col = z.side === "bullish" ? C.bull : C.bear;
       var focus = z.tf === self.focus;
       var yt = y(z.top), yb = y(z.bottom);
       g.globalAlpha = focus ? 0.22 : 0.085; g.fillStyle = col;
@@ -423,7 +423,7 @@ var DATA = __DATA__;
     pill.appendChild(document.createTextNode(z.side));
     if (z.star) pill.appendChild(el("span", "star", "★ in " + z.star));
     head.appendChild(pill);
-    head.appendChild(el("span", "verdict " + (s.in_zone ? (z.side === "demand" ? "v-bull" : "v-bear") : "v-none"),
+    head.appendChild(el("span", "verdict " + (s.in_zone ? (z.side === "bullish" ? "v-bull" : "v-bear") : "v-none"),
       s.in_zone ? "price in zone" : (z.distance_pct != null ? z.distance_pct.toFixed(1) + "% away" : "—")));
     card.appendChild(head);
 

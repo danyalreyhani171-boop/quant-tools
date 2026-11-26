@@ -167,7 +167,7 @@ class ZoneEvent:
     top: float
     bot: float
     time: int        # time of the oldest base candle
-    bull: bool       # demand when True
+    bull: bool       # bullish when True
     score: int       # zs — the 8-point part, before freshness
     bar_index: int   # index of the bar that confirmed it
     # diagnostics, not part of the Pine port
@@ -364,7 +364,7 @@ class Zone:
         return self.score + fresh
 
     def label(self) -> str:
-        side = "demand" if self.bull else "supply"
+        side = "bullish" if self.bull else "bearish"
         star = f" ★ in {self.star}" if self.star else ""
         return f"{TF_NAMES[self.tf]} {side} {self.display_score}/10{star}"
 

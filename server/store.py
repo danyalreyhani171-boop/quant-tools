@@ -122,7 +122,7 @@ def sync(conn: sqlite3.Connection, instrument: str, p: Optional[Params] = None) 
     fresh: dict[str, dict] = {}
     for z in res.book.zones:
         tf = TF_NAMES[z.tf]
-        side = "demand" if z.bull else "supply"
+        side = "bullish" if z.bull else "bearish"
         zid = zone_id(instrument, tf, side, z.time)
         fresh[zid] = {
             "id": zid, "instrument": instrument, "tf": tf, "side": side,
@@ -165,7 +165,7 @@ def sync(conn: sqlite3.Connection, instrument: str, p: Optional[Params] = None) 
     dead_reason = {}
     for z in res.book.dead:
         tf = TF_NAMES[z.tf]
-        side = "demand" if z.bull else "supply"
+        side = "bullish" if z.bull else "bearish"
         dead_reason[zone_id(instrument, tf, side, z.time)] = z.died_of
 
     for zid in set(stored) - set(fresh):

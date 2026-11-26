@@ -36,7 +36,7 @@ and weekend gaps don't manufacture zones.
 | Freshness | untested +2 · one test +1 |
 
 Freshness is live, so a 9/10 becomes an 8 on first test and a 7 on second. The label reads
-`D demand 9/10 ★ in W` — timeframe, side, score, and the ★ marking a zone nested inside a
+`D bullish 9/10 ★ in W` — timeframe, side, score, and the ★ marking a zone nested inside a
 higher-timeframe zone of the same direction.
 
 ### Invalidation — four ways
@@ -59,7 +59,7 @@ the list is configuration, not architecture. Enable back-adjustment (B-ADJ) on N
 ## Timeframes
 
 Zones are built on W/D/4H/1H. **Alerts fire on 1H and 4H only**; weekly and daily zones still draw on
-the chart and still supply the ★ confluence marking.
+the chart and still provide the ★ confluence marking.
 
 ## Installation
 
@@ -168,3 +168,8 @@ python3 server/web.py  --db drquant.db      # http://127.0.0.1:8080/terminal
 Pass `--live` once MT5 is feeding the store; the page then says so instead of labelling
 itself a demo. Candles move on a simulated tick until then — `LiveChart.push(price)` is the
 only way price enters the chart, so wiring the feed changes nothing else.
+
+### Wording
+
+Zone sides are **bullish** and **bearish** throughout — in the chart labels, the store, the
+API and the site. "Supply and demand" is kept only where it names the technique itself.

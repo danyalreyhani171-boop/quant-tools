@@ -1,5 +1,5 @@
 """
-Diagnostics for the supply & demand engine.
+Diagnostics for the bearish & bullish engine.
 
 Runs the engine over a series and reports what it actually produced: how many zones,
 how they scored, what killed them and how long they lived. Built to answer the question
@@ -76,7 +76,7 @@ def main() -> None:
 
     # ── what got created, per timeframe ──
     print("\nZONES CREATED, per timeframe and side")
-    print(f"  {'tf':<4} {'bars':>6} {'demand':>8} {'supply':>8} {'total':>7}")
+    print(f"  {'tf':<4} {'bars':>6} {'bullish':>8} {'bearish':>8} {'total':>7}")
     series = {0: resample(bars, 604800), 1: resample(bars, 86400),
               2: resample(bars, 14400), 3: bars}
     for tf in range(4):
@@ -87,9 +87,9 @@ def main() -> None:
 
     total_d = sum(1 for tf in range(4) for e in res.events[tf] if e.bull)
     total_s = sum(1 for tf in range(4) for e in res.events[tf] if not e.bull)
-    print(f"\n  demand {total_d} · supply {total_s}", end="")
+    print(f"\n  bullish {total_d} · bearish {total_s}", end="")
     if total_d + total_s:
-        print(f"  →  {100 * total_s / (total_d + total_s):.0f}% of zones are supply")
+        print(f"  →  {100 * total_s / (total_d + total_s):.0f}% of zones are bearish")
     else:
         print()
 
