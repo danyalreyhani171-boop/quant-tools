@@ -40,14 +40,14 @@ from engine.sd import Bar  # noqa: E402
 SYMBOLS = {
     "XAUUSD": "XAUUSD",
     "GBPUSD": "GBPUSD",
-    "NQ1!":   "NAS100",    # CFD — unconfirmed on Vantage, verify
-    "CL1!":   "USOUSD",    # CFD — Vantage's WTI Crude Oil Cash
+    "NAS100":   "NAS100",    # CFD — unconfirmed on Vantage, verify
+    "USOUSD":   "USOUSD",    # CFD — Vantage's WTI Crude Oil Cash
 }
 
 # Names other brokers use, so the lister can suggest a match if the above misses.
 ALIASES = {
-    "NQ1!": ["NAS100", "USTEC", "US100", "NDX100", "NASDAQ", "USTECH"],
-    "CL1!": ["USOUSD", "USOIL", "WTI", "XTIUSD", "CRUDE", "OILUSD"],
+    "NAS100": ["NAS100", "USTEC", "US100", "NDX100", "NASDAQ", "USTECH"],
+    "USOUSD": ["USOUSD", "USOIL", "WTI", "XTIUSD", "CRUDE", "OILUSD"],
     "XAUUSD": ["XAUUSD", "GOLD"],
     "GBPUSD": ["GBPUSD"],
 }

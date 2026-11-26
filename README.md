@@ -50,11 +50,11 @@ Zones per side are capped: three by default, two on weekly, four on 1H.
 
 ## Instruments
 
-XAUUSD (gold) · GBPUSD · NQ1! (Nasdaq) · CL1! (WTI crude)
+XAUUSD (gold) · GBPUSD · NAS100 (Nasdaq CFD) · USOUSD (WTI crude CFD)
 
 One metal, one FX major, one index future, one energy future — four different drivers, so a quiet
 session in one is rarely a quiet session in all of them. The engine reads price, not asset class, so
-the list is configuration, not architecture. Enable back-adjustment (B-ADJ) on NQ1! and CL1!.
+the list is configuration, not architecture. No back-adjustment is needed on CFDs, because they have no expiry. The only futures-era note left is on the synthetic feed.
 
 ## Timeframes
 

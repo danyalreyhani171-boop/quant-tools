@@ -642,8 +642,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         <tbody>
           <tr><td class="n">XAUUSD</td><td>Gold Spot / US Dollar</td><td>Metal</td><td class="n">24/5</td><td>Wide ATR — zones run large</td></tr>
           <tr><td class="n">GBPUSD</td><td>British Pound / US Dollar</td><td>FX major</td><td class="n">24/5</td><td>Weekend gaps discarded</td></tr>
-          <tr><td class="n">NQ1!</td><td>E-mini Nasdaq 100</td><td>Index future</td><td class="n">23/5</td><td>Back-adjustment required</td></tr>
-          <tr><td class="n">CL1!</td><td>WTI Crude Oil</td><td>Energy future</td><td class="n">23/5</td><td>Back-adjustment required · roll gaps discarded</td></tr>
+          <tr><td class="n">NAS100</td><td>Nasdaq 100 CFD</td><td>Index CFD</td><td class="n">23/5</td><td>No expiry, no contract rolls</td></tr>
+          <tr><td class="n">USOUSD</td><td>WTI Crude Oil Cash</td><td>Energy CFD</td><td class="n">23/5</td><td>No expiry, no contract rolls</td></tr>
         </tbody>
       </table>
     </div>
@@ -973,19 +973,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     ["XAUUSD", "1H", "bullish", "3,588 – 3,601",      5, 0, "7h",  "",    1.9,  false],
     ["GBPUSD", "4H", "bearish", "1.3438 – 1.3455",   10, 0, "13d", "",    3.2,  false],
     ["GBPUSD", "4H", "bearish", "1.3339 – 1.3355",   10, 0, "12d", "",    2.5,  false],
-    ["NQ1!",   "D",  "bearish", "27,120 – 27,480",    8, 1, "4d",  "",    1.2,  false],
-    ["NQ1!",   "4H", "bullish", "26,410 – 26,780",    6, 0, "19h", "",    0.4,  false],
-    ["NQ1!",   "W",  "bullish", "25,400 – 26,050",    7, 0, "11w", "",    3.2,  false],
-    ["CL1!",   "D",  "bearish", "85.20 – 86.40",      8, 0, "6d",  "",    2.2,  false],
-    ["CL1!",   "4H", "bearish", "83.90 – 84.35",      7, 1, "14h", "D",   0.6,  false],
-    ["CL1!",   "1H", "bullish", "82.60 – 83.05",      6, 0, "5h",  "",    0.5,  false],
-    ["CL1!",   "W",  "bullish", "78.40 – 80.10",      7, 0, "13w", "",    4.0,  false]
+    ["NAS100",   "D",  "bearish", "27,120 – 27,480",    8, 1, "4d",  "",    1.2,  false],
+    ["NAS100",   "4H", "bullish", "26,410 – 26,780",    6, 0, "19h", "",    0.4,  false],
+    ["NAS100",   "W",  "bullish", "25,400 – 26,050",    7, 0, "11w", "",    3.2,  false],
+    ["USOUSD",   "D",  "bearish", "85.20 – 86.40",      8, 0, "6d",  "",    2.2,  false],
+    ["USOUSD",   "4H", "bearish", "83.90 – 84.35",      7, 1, "14h", "D",   0.6,  false],
+    ["USOUSD",   "1H", "bullish", "82.60 – 83.05",      6, 0, "5h",  "",    0.5,  false],
+    ["USOUSD",   "W",  "bullish", "78.40 – 80.10",      7, 0, "13w", "",    4.0,  false]
   ];
 
-  var INSTRUMENTS = ["XAUUSD", "GBPUSD", "NQ1!", "CL1!"];
+  var INSTRUMENTS = ["XAUUSD", "GBPUSD", "NAS100", "USOUSD"];
 
   // last close per instrument, so each diagram can place price against its own zones
-  var PRICES = { "XAUUSD": 3661.40, "GBPUSD": 1.30190, "NQ1!": 26872.50, "CL1!": 83.40 };
+  var PRICES = { "XAUUSD": 3661.40, "GBPUSD": 1.30190, "NAS100": 26872.50, "USOUSD": 83.40 };
 
   // recent closes, oldest first, ending on the current price — the line drawn through
   // the zones. GBPUSD is read off the live 4H chart; the rest match their example levels.
@@ -994,9 +994,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
                1.3300, 1.3255, 1.3225, 1.3195, 1.3205, 1.3150, 1.3110, 1.3140, 1.30190],
     "XAUUSD": [3745, 3760, 3780, 3795, 3770, 3740, 3700, 3680,
                3665, 3650, 3640, 3655, 3670, 3685, 3672, 3658, 3661.40],
-    "NQ1!":   [27350, 27420, 27300, 27150, 26980, 26820, 26650, 26480,
+    "NAS100":   [27350, 27420, 27300, 27150, 26980, 26820, 26650, 26480,
                26560, 26700, 26880, 27050, 26960, 26810, 26740, 26830, 26872.50],
-    "CL1!":   [85.9, 86.2, 85.6, 84.9, 84.3, 83.8, 84.1, 84.6,
+    "USOUSD":   [85.9, 86.2, 85.6, 84.9, 84.3, 83.8, 84.1, 84.6,
                84.2, 83.6, 83.1, 82.9, 83.3, 83.7, 83.5, 83.2, 83.40]
   };
 
@@ -1026,7 +1026,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   var N_CANDLES = 44;
 
   // per-tick movement, scaled to each instrument
-  var TICK_VOL = { "XAUUSD": 0.85, "GBPUSD": 0.00016, "NQ1!": 10.5, "CL1!": 0.045 };
+  var TICK_VOL = { "XAUUSD": 0.85, "GBPUSD": 0.00016, "NAS100": 10.5, "USOUSD": 0.045 };
 
   function rng32(seed) {           // deterministic, so the seeded history never jumps
     return function () {
@@ -1227,14 +1227,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       ["Fair value gap", true, 1, "imbalance left in the leg"],
       ["Freshness", true, 2, "untested"]
     ],
-    "NQ1!|4H": [
+    "NAS100|4H": [
       ["Departure strength", false, 1, "1.7 ATR — only just clears the gate"],
       ["Base tightness", true, 2, "3 base candles"],
       ["Break of structure", false, 0, "did not clear the prior swing"],
       ["Fair value gap", true, 1, "gap between bar 1 and bar 3"],
       ["Freshness", true, 2, "untested"]
     ],
-    "CL1!|4H": [
+    "USOUSD|4H": [
       ["Departure strength", true, 2, "2.3 ATR"],
       ["Base tightness", true, 2, "2 base candles"],
       ["Break of structure", true, 2, "cleared the prior swing high"],
@@ -1244,15 +1244,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   };
 
   var LOG = [
-    ["23 Nov 04:00", "CL1!",   "4H", "bearish", 7, "first touch",    "holding"],
+    ["23 Nov 04:00", "USOUSD",   "4H", "bearish", 7, "first touch",    "holding"],
     ["22 Nov 16:00", "GBPUSD", "4H", "bullish", 8, "first touch",    "holding"],
     ["22 Nov 12:00", "XAUUSD", "D",  "bearish", 8, "second test",    "holding"],
     ["22 Nov 08:00", "GBPUSD", "1H", "bullish", 7, "zone formed",    "untested"],
-    ["21 Nov 20:00", "CL1!",   "1H", "bullish", 6, "zone formed",    "untested"],
-    ["21 Nov 16:00", "NQ1!",   "4H", "bearish", 7, "third test",     "removed — test cap"],
+    ["21 Nov 20:00", "USOUSD",   "1H", "bullish", 6, "zone formed",    "untested"],
+    ["21 Nov 16:00", "NAS100",   "4H", "bearish", 7, "third test",     "removed — test cap"],
     ["21 Nov 09:00", "XAUUSD", "4H", "bearish", 7, "zone formed",    "untested"],
-    ["20 Nov 21:00", "NQ1!",   "D",  "bullish", 8, "far-edge close", "broke"],
-    ["20 Nov 14:00", "CL1!",   "D",  "bearish", 8, "zone formed",    "untested"],
+    ["20 Nov 21:00", "NAS100",   "D",  "bullish", 8, "far-edge close", "broke"],
+    ["20 Nov 14:00", "USOUSD",   "D",  "bearish", 8, "zone formed",    "untested"],
     ["20 Nov 10:00", "GBPUSD", "4H", "bearish", 6, "second test",    "held"],
     ["19 Nov 18:00", "XAUUSD", "1H", "bullish", 5, "age limit",      "expired"]
   ];

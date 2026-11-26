@@ -20,7 +20,7 @@ from engine.sd import Bar  # noqa: E402
 
 HOUR = 3600
 
-INSTRUMENTS = ["XAUUSD", "GBPUSD", "NQ1!", "CL1!"]
+INSTRUMENTS = ["XAUUSD", "GBPUSD", "NAS100", "USOUSD"]
 
 
 class Feed(Protocol):
@@ -41,8 +41,8 @@ class SyntheticFeed:
         # symbol:   (start,    drift per bar, vol,      spike chance)
         "XAUUSD":   (3745.0,  -0.055,         2.6,      0.07),
         "GBPUSD":   (1.3505,  -0.00003,       0.00055,  0.06),
-        "NQ1!":     (27350.0, -1.1,           38.0,     0.08),
-        "CL1!":     (85.90,   -0.0015,        0.16,     0.07),
+        "NAS100":     (27350.0, -1.1,           38.0,     0.08),
+        "USOUSD":     (85.90,   -0.0015,        0.16,     0.07),
     }
 
     def __init__(self, n: int = 1400, seed: int = 11):
@@ -80,8 +80,8 @@ class HttpFeed:
     SYMBOL_MAP = {
         "XAUUSD": "XAU/USD",
         "GBPUSD": "GBP/USD",
-        "NQ1!":   "NQ.c.0",   # continuous, back-adjusted
-        "CL1!":   "CL.c.0",
+        "NAS100":   "NQ.c.0",   # continuous, back-adjusted
+        "USOUSD":   "CL.c.0",
     }
 
     def __init__(self, api_key: str, base: str):

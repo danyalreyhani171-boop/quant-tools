@@ -80,8 +80,8 @@ granularity.
 |---|---|---|
 | XAUUSD | XAUUSD | Spot |
 | GBPUSD | GBPUSD | Spot |
-| NQ1! | NAS100 / USTEC | **CFD** — no expiry, no rolls, no CME licence |
-| CL1! | USOIL / WTI | **CFD** — same |
+| NAS100 | NAS100 / USTEC | **CFD** — no expiry, no rolls, no CME licence |
+| USOUSD | USOIL / WTI | **CFD** — same |
 
 Why this over a paid data API or TradingView webhooks:
 
@@ -227,7 +227,7 @@ Step 1 is the only one with real unknowns. Steps 3 to 5 are plumbing.
 
 ## 9. Open questions
 
-- Cost and licensing for NQ1! and CL1! bars, and whether the provider back-adjusts continuous
+- Cost and licensing for NAS100 and USOUSD bars, and whether the provider back-adjusts continuous
   contracts.
 - How far back history goes — this sets how quickly you can publish a measured hit rate.
 - Whether the Pine script is ever handed to members as a chart overlay, or stays internal.
