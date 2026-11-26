@@ -1,0 +1,560 @@
+<title>Terminal — DRQuantMTF</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root {
+  --bg:#070b11; --surface:#0d131b; --surface-2:#131b25;
+  --line:#1e2836; --line-soft:#151d27;
+  --fg:#d4dbe4; --fg-dim:#85909f; --fg-faint:#647181;
+  --accent:#5d80b6; --accent-deep:#1b2d4d; --accent-soft:rgba(93,128,182,.13);
+  --bull:#2f8a7e; --bear:#bc524d;
+  --bull-soft:rgba(47,138,126,.13); --bear-soft:rgba(188,82,77,.13);
+  --warn:#7e8c9d; --warn-soft:rgba(126,140,157,.12);
+  --f-display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --col:1200px;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-display);
+     font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0}
+a{color:inherit}
+[hidden]{display:none!important}
+.wrap{max-width:var(--col);margin-inline:auto;
+      padding-left:max(16px,env(safe-area-inset-left,0px));
+      padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;
+         text-transform:uppercase;color:var(--fg-faint)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);
+             z-index:20;background:var(--bg)}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:19;
+        background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);
+        border-bottom:1px solid var(--line-soft)}
+.topbar .wrap{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:16px;letter-spacing:-.03em;display:flex;align-items:baseline;gap:7px}
+.brand .dot{color:var(--accent)}
+.src{margin-left:auto;font-family:var(--f-mono);font-size:10.5px;color:var(--fg-faint);
+     display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.src b{color:var(--fg);font-weight:500}
+.pyflag{color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
+        background:var(--accent-soft);border-radius:2px;padding:2px 7px;white-space:nowrap}
+
+.banner{background:var(--warn-soft);border-bottom:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.banner .wrap{padding-block:9px;font-family:var(--f-mono);font-size:11.5px;color:var(--warn);
+              display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.banner b{color:var(--fg)}
+
+.head{border-bottom:1px solid var(--line-soft)}
+.head .wrap{padding-block:24px 18px}
+.head-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.head-top h1{font-size:1.5rem;font-weight:700}
+.pill{margin-left:auto;font-family:var(--f-mono);font-size:11px;padding:4px 10px;border-radius:2px;
+      color:var(--warn);background:var(--warn-soft);
+      border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);white-space:nowrap}
+
+.census{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+@media(max-width:760px){.census{grid-template-columns:repeat(2,1fr)}}
+.cen{background:var(--surface);border:1px solid var(--line);border-radius:4px;
+     padding:11px 13px;display:grid;gap:6px}
+.cen.hot{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.cen .i{font-family:var(--f-mono);font-size:11.5px;font-weight:600}
+.cen .big{font-family:var(--f-mono);font-size:21px;font-weight:600;line-height:1;
+          font-variant-numeric:tabular-nums}
+.cen .sub{font-family:var(--f-mono);font-size:10px;color:var(--fg-faint)}
+
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.tabs button{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+             padding:12px 16px;background:transparent;border:0;border-right:1px solid var(--line);
+             color:var(--fg-faint);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--fg);background:var(--surface);
+             box-shadow:inset 0 -2px 0 var(--accent)}
+.tabs .count{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;
+             background:var(--accent-soft);color:var(--accent);font-size:10px}
+.body{padding-block:24px}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.card.live{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.card-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:11px 14px;
+           border-bottom:1px solid var(--line);background:var(--surface-2)}
+.card-head .p{font-family:var(--f-mono);font-size:12.5px;font-weight:600}
+.chip{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--fg-dim);
+      border:1px solid var(--line);border-radius:2px;padding:1px 5px}
+.zp{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:2px;
+    font-family:var(--f-mono);font-size:10.5px;border:1px solid transparent;white-space:nowrap}
+.zp-demand{color:var(--bull);background:var(--bull-soft);border-color:color-mix(in srgb,var(--bull) 30%,transparent)}
+.zp-supply{color:var(--bear);background:var(--bear-soft);border-color:color-mix(in srgb,var(--bear) 30%,transparent)}
+.star{color:var(--accent)}
+.verdict{margin-left:auto;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;
+         text-transform:uppercase;padding:3px 9px;border-radius:2px;white-space:nowrap}
+.v-bull{color:var(--bull);background:var(--bull-soft)}
+.v-bear{color:var(--bear);background:var(--bear-soft)}
+.v-none{color:var(--fg-faint);background:var(--surface-2);border:1px solid var(--line)}
+
+.card-main{padding:14px;display:grid;gap:13px}
+.mets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.met .k{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+        color:var(--fg-faint)}
+.met .v{font-family:var(--f-mono);font-size:15px;font-weight:500;margin-top:2px;
+        font-variant-numeric:tabular-nums}
+.chart{border-top:1px solid var(--line-soft);padding-top:12px}
+.chart canvas{width:100%;height:190px;display:block}
+.chart .cap{font-family:var(--f-mono);font-size:10px;color:var(--fg-faint);margin-top:7px;
+            display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--bull);flex:none;
+     animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.dot{animation:none}}
+.card-foot{padding:10px 14px;border-top:1px solid var(--line-soft);font-family:var(--f-mono);
+           font-size:10.5px;color:var(--fg-faint);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.conf{margin-left:auto;color:var(--accent);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line-soft)}
+th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+   color:var(--fg-faint);background:var(--surface-2);font-weight:500;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{font-family:var(--f-mono);font-size:11.5px;color:var(--fg-faint);margin-top:14px}
+.empty{padding:28px 14px;text-align:center;font-family:var(--f-mono);font-size:12px;color:var(--fg-faint)}
+footer{background:var(--surface);border-top:1px solid var(--line-soft);margin-top:40px}
+footer .wrap{padding-block:24px;font-family:var(--f-mono);font-size:11px;color:var(--fg-faint)}
+</style>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">DRQuant<span class="dot">·</span>MTF</div>
+    <div class="src">
+      <span class="pyflag">served by python</span>
+      <span>engine <b>v2</b></span>
+      <span>·</span>
+      <span>store <b>g.db</b></span>
+      <span>·</span>
+      <span>rendered <b>23:20:05 UTC</b></span>
+      <span>·</span>
+      <span><b>1 ms</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="banner">
+  <div class="wrap">
+    <span><b>DEMO</b> — the store is filled from the synthetic feed, and the candles move on a simulated tick. The zones below are real engine output over that data — the detection, scoring and invalidation are the production code.</span>
+  </div>
+</div>
+
+<div class="head">
+  <div class="wrap">
+    <div class="head-top">
+      <h1>Terminal</h1>
+      <span class="eyebrow">4 instruments · W/D/4H/1H · evaluated on bar close</span>
+      <span class="pill">Preview · not live yet</span>
+    </div>
+    <div class="census" id="census"></div>
+  </div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Terminal sections">
+  <button role="tab" aria-selected="true"  data-t="signals">Signals<span class="count" id="cSig">—</span></button>
+  <button role="tab" aria-selected="false" data-t="near">Approaching<span class="count" id="cNear">—</span></button>
+  <button role="tab" aria-selected="false" data-t="all">All zones<span class="count" id="cAll">—</span></button>
+  <button role="tab" aria-selected="false" data-t="log">Zone log</button>
+</div>
+
+<div class="wrap body">
+  <div id="tp-signals" role="tabpanel">
+    <div class="cards" id="cards"></div>
+    <p class="note" id="sigNote"></p>
+  </div>
+
+  <div id="tp-near" role="tabpanel" hidden>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Instrument</th><th>TF</th><th>Side</th><th>Range</th><th>Distance</th><th>Score</th><th>Confluence</th></tr></thead>
+        <tbody id="nearRows"></tbody>
+      </table>
+    </div>
+    <p class="note">Zones price is within 2% of, nearest first.</p>
+  </div>
+
+  <div id="tp-all" role="tabpanel" hidden>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Instrument</th><th>TF</th><th>Side</th><th>Range</th><th>Score</th><th>Tests</th><th>Age</th><th>Confluence</th></tr></thead>
+        <tbody id="allRows"></tbody>
+      </table>
+    </div>
+    <p class="note">Every live zone. A zone leaves this table the moment the engine invalidates it.</p>
+  </div>
+
+  <div id="tp-log" role="tabpanel" hidden>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>When</th><th>Instrument</th><th>TF</th><th>Side</th><th>Score</th><th>Event</th><th>Detail</th></tr></thead>
+        <tbody id="logRows"></tbody>
+      </table>
+    </div>
+    <p class="note">
+      What the zone did, not what a trade did. This is the raw material for performance
+      statistics that have not been published, because they have not been measured.
+    </p>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    DRQuantMTF — analysis tooling, not investment advice. Rendered server-side from the zone
+    store by <b>server/web.py</b>; the engine is <b>engine/sd.py</b>.
+  </div>
+</footer>
+
+<script>
+var DATA = {"signals":[{"instrument":"XAUUSD","price":3786.92,"path":[3778.27,3781.45,3780.8,3786.35,3777.15,3778.78,3776.37,3774.14,3769.45,3768.41,3772.19,3770.88,3766.79,3766.79,3772.69,3772.49,3786.92],"zones":[{"id":"XAUUSD|1H|supply|4777200","instrument":"XAUUSD","tf":"1H","side":"supply","top":3800.19,"bottom":3794.92,"zone_time":4777200,"score":5,"tests":0,"age":70,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":7,"inside":false,"distance_pct":0.21}],"active":{"id":"XAUUSD|1H|supply|4777200","instrument":"XAUUSD","tf":"1H","side":"supply","top":3800.19,"bottom":3794.92,"zone_time":4777200,"score":5,"tests":0,"age":70,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":7,"inside":false,"distance_pct":0.21},"in_zone":false},{"instrument":"GBPUSD","price":1.24599,"path":[1.25426,1.25445,1.25347,1.25183,1.24896,1.24926,1.24811,1.24785,1.2464,1.24566,1.24575,1.24547,1.24495,1.24572,1.2447,1.24581,1.24599],"zones":[{"id":"GBPUSD|D|supply|4579200","instrument":"GBPUSD","tf":"D","side":"supply","top":1.26983,"bottom":1.26723,"zone_time":4579200,"score":7,"tests":0,"age":2,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":9,"inside":false,"distance_pct":1.7},{"id":"GBPUSD|4H|supply|4737600","instrument":"GBPUSD","tf":"4H","side":"supply","top":1.26467,"bottom":1.26257,"zone_time":4737600,"score":7,"tests":0,"age":16,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":9,"inside":false,"distance_pct":1.33},{"id":"GBPUSD|4H|supply|4809600","instrument":"GBPUSD","tf":"4H","side":"supply","top":1.2554,"bottom":1.25426,"zone_time":4809600,"score":7,"tests":0,"age":11,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":9,"inside":false,"distance_pct":0.66},{"id":"GBPUSD|1H|supply|4672800","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.2707,"bottom":1.27036,"zone_time":4672800,"score":4,"tests":0,"age":98,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":6,"inside":false,"distance_pct":1.96},{"id":"GBPUSD|1H|supply|4723200","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.2659,"bottom":1.2657,"zone_time":4723200,"score":6,"tests":0,"age":84,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":8,"inside":false,"distance_pct":1.58},{"id":"GBPUSD|1H|supply|4759200","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.26381,"bottom":1.26355,"zone_time":4759200,"score":6,"tests":0,"age":74,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":8,"inside":false,"distance_pct":1.41},{"id":"GBPUSD|1H|supply|4773600","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.26125,"bottom":1.26056,"zone_time":4773600,"score":7,"tests":0,"age":70,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":9,"inside":false,"distance_pct":1.17}],"active":{"id":"GBPUSD|4H|supply|4809600","instrument":"GBPUSD","tf":"4H","side":"supply","top":1.2554,"bottom":1.25426,"zone_time":4809600,"score":7,"tests":0,"age":11,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":9,"inside":false,"distance_pct":0.66},"in_zone":false},{"instrument":"NQ1!","price":28004.02,"path":[28671.47,28705.69,28787.24,28807.46,28874.73,28713.27,28654.03,28628.64,28588.14,28482.15,28498.38,28417.29,28332.33,28220.0,28125.3,28040.05,28004.02],"zones":[{"id":"NQ1!|D|supply|4665600","instrument":"NQ1!","tf":"D","side":"supply","top":29107.08,"bottom":29064.96,"zone_time":4665600,"score":7,"tests":0,"age":0,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":9,"inside":false,"distance_pct":3.79},{"id":"NQ1!|1H|supply|4917600","instrument":"NQ1!","tf":"1H","side":"supply","top":28671.94,"bottom":28645.26,"zone_time":4917600,"score":6,"tests":0,"age":30,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":8,"inside":false,"distance_pct":2.29}],"active":{"id":"NQ1!|1H|supply|4917600","instrument":"NQ1!","tf":"1H","side":"supply","top":28671.94,"bottom":28645.26,"zone_time":4917600,"score":6,"tests":0,"age":30,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":8,"inside":false,"distance_pct":2.29},"in_zone":false},{"instrument":"CL1!","price":88.06,"path":[83.53,83.44,83.89,83.68,83.84,84.31,84.45,84.63,84.25,84.55,84.5,84.81,84.76,85.47,85.78,87.36,88.06],"zones":[{"id":"CL1!|4H|demand|4968000","instrument":"CL1!","tf":"4H","side":"demand","top":84.81,"bottom":84.64,"zone_time":4968000,"score":8,"tests":0,"age":0,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":10,"inside":false,"distance_pct":3.69},{"id":"CL1!|1H|demand|4978800","instrument":"CL1!","tf":"1H","side":"demand","top":84.76,"bottom":84.67,"zone_time":4978800,"score":6,"tests":0,"age":14,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":8,"inside":false,"distance_pct":3.75},{"id":"CL1!|1H|demand|5007600","instrument":"CL1!","tf":"1H","side":"demand","top":85.92,"bottom":85.74,"zone_time":5007600,"score":8,"tests":0,"age":4,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":10,"inside":false,"distance_pct":2.43}],"active":{"id":"CL1!|1H|demand|5007600","instrument":"CL1!","tf":"1H","side":"demand","top":85.92,"bottom":85.74,"zone_time":5007600,"score":8,"tests":0,"age":4,"star":null,"state":"live","died_of":null,"created_at":1795456822,"updated_at":1795456822,"display_score":10,"inside":false,"distance_pct":2.43},"in_zone":false}],"events":[{"id":59,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"CL1!","tf":"1H","side":"supply","score":7,"tests":0,"died_of":"age"},{"id":58,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"CL1!","tf":"1H","side":"supply","score":6,"tests":1,"died_of":"age"},{"id":57,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"CL1!","tf":"4H","side":"supply","score":6,"tests":0,"died_of":"age"},{"id":56,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|4H|demand|4968000","instrument":"CL1!","tf":"4H","side":"demand","top":84.81,"bottom":84.64,"zone_time":4968000,"score":8,"tests":0,"age":0,"star":null},"instrument":"CL1!","tf":"4H","side":"demand","score":8,"tests":0,"died_of":null},{"id":55,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|1H|demand|5007600","instrument":"CL1!","tf":"1H","side":"demand","top":85.92,"bottom":85.74,"zone_time":5007600,"score":8,"tests":0,"age":4,"star":null},"instrument":"CL1!","tf":"1H","side":"demand","score":8,"tests":0,"died_of":null},{"id":54,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|1H|demand|4978800","instrument":"CL1!","tf":"1H","side":"demand","top":84.76,"bottom":84.67,"zone_time":4978800,"score":6,"tests":0,"age":14,"star":null},"instrument":"CL1!","tf":"1H","side":"demand","score":6,"tests":0,"died_of":null},{"id":53,"kind":"invalidated","at":1795456822,"detail":{"died_of":"far-edge-close"},"instrument":"NQ1!","tf":"1H","side":"demand","score":4,"tests":0,"died_of":"far-edge-close"},{"id":52,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"NQ1!","tf":"4H","side":"demand","score":6,"tests":0,"died_of":"age"},{"id":51,"kind":"formed","at":1795456822,"detail":{"id":"NQ1!|D|supply|4665600","instrument":"NQ1!","tf":"D","side":"supply","top":29107.08,"bottom":29064.96,"zone_time":4665600,"score":7,"tests":0,"age":0,"star":null},"instrument":"NQ1!","tf":"D","side":"supply","score":7,"tests":0,"died_of":null},{"id":50,"kind":"formed","at":1795456822,"detail":{"id":"NQ1!|1H|supply|4917600","instrument":"NQ1!","tf":"1H","side":"supply","top":28671.94,"bottom":28645.26,"zone_time":4917600,"score":6,"tests":0,"age":30,"star":null},"instrument":"NQ1!","tf":"1H","side":"supply","score":6,"tests":0,"died_of":null},{"id":49,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|4H|supply|4809600","instrument":"GBPUSD","tf":"4H","side":"supply","top":1.2554,"bottom":1.25426,"zone_time":4809600,"score":7,"tests":0,"age":11,"star":null},"instrument":"GBPUSD","tf":"4H","side":"supply","score":7,"tests":0,"died_of":null},{"id":48,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|D|supply|4579200","instrument":"GBPUSD","tf":"D","side":"supply","top":1.26983,"bottom":1.26723,"zone_time":4579200,"score":7,"tests":0,"age":2,"star":null},"instrument":"GBPUSD","tf":"D","side":"supply","score":7,"tests":0,"died_of":null},{"id":47,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|4H|supply|4737600","instrument":"GBPUSD","tf":"4H","side":"supply","top":1.26467,"bottom":1.26257,"zone_time":4737600,"score":7,"tests":0,"age":16,"star":null},"instrument":"GBPUSD","tf":"4H","side":"supply","score":7,"tests":0,"died_of":null},{"id":46,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|1H|supply|4773600","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.26125,"bottom":1.26056,"zone_time":4773600,"score":7,"tests":0,"age":70,"star":null},"instrument":"GBPUSD","tf":"1H","side":"supply","score":7,"tests":0,"died_of":null},{"id":45,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|1H|supply|4759200","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.26381,"bottom":1.26355,"zone_time":4759200,"score":6,"tests":0,"age":74,"star":null},"instrument":"GBPUSD","tf":"1H","side":"supply","score":6,"tests":0,"died_of":null},{"id":44,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|1H|supply|4723200","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.2659,"bottom":1.2657,"zone_time":4723200,"score":6,"tests":0,"age":84,"star":null},"instrument":"GBPUSD","tf":"1H","side":"supply","score":6,"tests":0,"died_of":null},{"id":43,"kind":"formed","at":1795456822,"detail":{"id":"GBPUSD|1H|supply|4672800","instrument":"GBPUSD","tf":"1H","side":"supply","top":1.2707,"bottom":1.27036,"zone_time":4672800,"score":4,"tests":0,"age":98,"star":null},"instrument":"GBPUSD","tf":"1H","side":"supply","score":4,"tests":0,"died_of":null},{"id":42,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"XAUUSD","tf":"1H","side":"supply","score":6,"tests":0,"died_of":"age"},{"id":41,"kind":"invalidated","at":1795456822,"detail":{"died_of":"far-edge-close"},"instrument":"XAUUSD","tf":"1H","side":"demand","score":6,"tests":0,"died_of":"far-edge-close"},{"id":40,"kind":"invalidated","at":1795456822,"detail":{"died_of":"far-edge-close"},"instrument":"XAUUSD","tf":"4H","side":"demand","score":3,"tests":0,"died_of":"far-edge-close"},{"id":39,"kind":"formed","at":1795456822,"detail":{"id":"XAUUSD|1H|supply|4777200","instrument":"XAUUSD","tf":"1H","side":"supply","top":3800.19,"bottom":3794.92,"zone_time":4777200,"score":5,"tests":0,"age":70,"star":null},"instrument":"XAUUSD","tf":"1H","side":"supply","score":5,"tests":0,"died_of":null},{"id":38,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"CL1!","tf":"1H","side":"demand","score":7,"tests":0,"died_of":"age"},{"id":37,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|1H|supply|4165200","instrument":"CL1!","tf":"1H","side":"supply","top":86.05,"bottom":85.96,"zone_time":4165200,"score":7,"tests":0,"age":38,"star":null},"instrument":"CL1!","tf":"1H","side":"supply","score":7,"tests":0,"died_of":"age"},{"id":36,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|4H|supply|4075200","instrument":"CL1!","tf":"4H","side":"supply","top":87.43,"bottom":87.12,"zone_time":4075200,"score":6,"tests":0,"age":12,"star":null},"instrument":"CL1!","tf":"4H","side":"supply","score":6,"tests":0,"died_of":"age"},{"id":35,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|1H|supply|3913200","instrument":"CL1!","tf":"1H","side":"supply","top":87.56,"bottom":87.41,"zone_time":3913200,"score":6,"tests":1,"age":107,"star":null},"instrument":"CL1!","tf":"1H","side":"supply","score":6,"tests":1,"died_of":"age"},{"id":34,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"NQ1!","tf":"4H","side":"supply","score":5,"tests":0,"died_of":"age"},{"id":33,"kind":"formed","at":1795456822,"detail":{"id":"NQ1!|1H|demand|4294800","instrument":"NQ1!","tf":"1H","side":"demand","top":29100.81,"bottom":29060.22,"zone_time":4294800,"score":4,"tests":0,"age":0,"star":null},"instrument":"NQ1!","tf":"1H","side":"demand","score":4,"tests":0,"died_of":"far-edge-close"},{"id":32,"kind":"formed","at":1795456822,"detail":{"id":"NQ1!|4H|demand|3816000","instrument":"NQ1!","tf":"4H","side":"demand","top":28206.39,"bottom":28056.03,"zone_time":3816000,"score":6,"tests":0,"age":30,"star":null},"instrument":"NQ1!","tf":"4H","side":"demand","score":6,"tests":0,"died_of":"age"},{"id":31,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"GBPUSD","tf":"1H","side":"supply","score":5,"tests":0,"died_of":"age"},{"id":30,"kind":"invalidated","at":1795456822,"detail":{"died_of":"test-cap"},"instrument":"XAUUSD","tf":"1H","side":"supply","score":5,"tests":1,"died_of":"test-cap"},{"id":29,"kind":"formed","at":1795456822,"detail":{"id":"XAUUSD|1H|demand|4298400","instrument":"XAUUSD","tf":"1H","side":"demand","top":3787.68,"bottom":3785.72,"zone_time":4298400,"score":6,"tests":0,"age":3,"star":null},"instrument":"XAUUSD","tf":"1H","side":"demand","score":6,"tests":0,"died_of":"far-edge-close"},{"id":28,"kind":"formed","at":1795456822,"detail":{"id":"XAUUSD|4H|demand|4276800","instrument":"XAUUSD","tf":"4H","side":"demand","top":3782.17,"bottom":3780.05,"zone_time":4276800,"score":3,"tests":0,"age":0,"star":null},"instrument":"XAUUSD","tf":"4H","side":"demand","score":3,"tests":0,"died_of":"far-edge-close"},{"id":27,"kind":"formed","at":1795456822,"detail":{"id":"XAUUSD|1H|supply|4111200","instrument":"XAUUSD","tf":"1H","side":"supply","top":3829.95,"bottom":3828.48,"zone_time":4111200,"score":6,"tests":0,"age":55,"star":null},"instrument":"XAUUSD","tf":"1H","side":"supply","score":6,"tests":0,"died_of":"age"},{"id":26,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"CL1!","tf":"1H","side":"demand","score":6,"tests":0,"died_of":"age"},{"id":25,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"CL1!","tf":"1H","side":"demand","score":8,"tests":0,"died_of":"age"},{"id":24,"kind":"formed","at":1795456822,"detail":{"id":"CL1!|1H|demand|3175200","instrument":"CL1!","tf":"1H","side":"demand","top":85.84,"bottom":85.81,"zone_time":3175200,"score":7,"tests":0,"age":114,"star":null},"instrument":"CL1!","tf":"1H","side":"demand","score":7,"tests":0,"died_of":"age"},{"id":23,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"NQ1!","tf":"1H","side":"supply","score":5,"tests":0,"died_of":"age"},{"id":22,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"NQ1!","tf":"1H","side":"demand","score":6,"tests":0,"died_of":"age"},{"id":21,"kind":"invalidated","at":1795456822,"detail":{"died_of":"age"},"instrument":"NQ1!","tf":"1H","side":"demand","score":4,"tests":2,"died_of":"age"},{"id":20,"kind":"formed","at":1795456822,"detail":{"id":"NQ1!|4H|supply|2923200","instrument":"NQ1!","tf":"4H","side":"supply","top":29064.25,"bottom":28970.73,"zone_time":2923200,"score":5,"tests":0,"age":37,"star":null},"instrument":"NQ1!","tf":"4H","side":"supply","score":5,"tests":0,"died_of":"age"}],"tick_note":"simulated ticks"};
+
+(function () {
+  "use strict";
+
+  var SIGNALS = DATA.signals || [];
+  var EVENTS  = DATA.events  || [];
+  var TF_ORDER = { W: 0, D: 1, "4H": 2, "1H": 3 };
+
+  function el(t, c, x) { var n = document.createElement(t); if (c) n.className = c;
+    if (x != null) n.textContent = x; return n; }
+  function scoreColor(v) { return v >= 8 ? "var(--bull)" : v >= 6 ? "var(--fg)" : "var(--fg-dim)"; }
+  function sideColor(s) { return s === "demand" ? "var(--bull)" : "var(--bear)"; }
+  function fmtPx(v) {
+    if (v == null) return "—";
+    if (Math.abs(v) < 10) return v.toFixed(5);
+    if (Math.abs(v) < 1000) return v.toFixed(2);
+    return v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function ago(ts) {
+    var s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+    if (s < 90) return s + "s ago";
+    if (s < 5400) return Math.round(s / 60) + "m ago";
+    if (s < 172800) return Math.round(s / 3600) + "h ago";
+    return Math.round(s / 86400) + "d ago";
+  }
+
+  /* ── census ── */
+  var cen = document.getElementById("census");
+  SIGNALS.forEach(function (s) {
+    var fresh = s.zones.filter(function (z) { return z.tests === 0; }).length;
+    var c = el("div", "cen" + (s.in_zone ? " hot" : ""));
+    c.appendChild(el("div", "i", s.instrument));
+    var b = el("div", "big", String(s.zones.length));
+    b.style.color = s.in_zone ? "var(--accent)" : "var(--fg)";
+    c.appendChild(b);
+    c.appendChild(el("div", "sub", fresh + " fresh" + (s.in_zone ? " · in zone" : "")));
+    cen.appendChild(c);
+  });
+
+  /* ── live candle chart ──────────────────────────
+     Price enters only through push(). Ticks are simulated here; wired to the feed on the
+     server, the same method is called and nothing else changes. */
+  var TICK_MS = 900, PER_CANDLE = 14, N = 44;
+  var CHARTS = [];
+
+  function rng32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var x = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function volOf(path, price) {
+    if (!path || path.length < 3) return Math.abs(price || 1) * 0.0004;
+    var d = [];
+    for (var i = 1; i < path.length; i++) d.push(Math.abs(path[i] - path[i - 1]));
+    d.sort(function (a, b) { return a - b; });
+    return (d[Math.floor(d.length / 2)] || Math.abs(price) * 0.0004) * 0.35;
+  }
+
+  function LiveChart(cv, sig) {
+    this.cv = cv;
+    this.focus = sig.active ? sig.active.tf : null;
+    this.vol = volOf(sig.path, sig.price);
+    this.rand = rng32(sig.instrument.length * 104729 + 7);
+    this.zones = sig.zones.slice().sort(function (a, b) {
+      return TF_ORDER[a.tf] - TF_ORDER[b.tf];
+    });
+    this.candles = this.seed(sig);
+    this.ticks = 0;
+  }
+
+  LiveChart.prototype.seed = function (sig) {
+    var path = (sig.path && sig.path.length > 1) ? sig.path : [sig.price, sig.price];
+    var r = rng32(sig.instrument.length * 7919), out = [];
+    var per = Math.max(1, Math.round(N / (path.length - 1)));
+    for (var i = 0; i < path.length - 1; i++) {
+      for (var k = 0; k < per; k++) {
+        var o = path[i] + (path[i + 1] - path[i]) * (k / per);
+        var c = path[i] + (path[i + 1] - path[i]) * ((k + 1) / per) + (r() - 0.5) * this.vol * 2;
+        var w = this.vol * (1.2 + r() * 2.2);
+        out.push({ o: o, c: c, h: Math.max(o, c) + r() * w, l: Math.min(o, c) - r() * w });
+      }
+    }
+    var last = out[out.length - 1];
+    if (last && sig.price != null) {
+      last.c = sig.price;
+      last.h = Math.max(last.h, last.c);
+      last.l = Math.min(last.l, last.c);
+    }
+    return out.slice(-N);
+  };
+
+  LiveChart.prototype.push = function (price) {
+    var cur = this.candles[this.candles.length - 1];
+    cur.c = price;
+    if (price > cur.h) cur.h = price;
+    if (price < cur.l) cur.l = price;
+    if (++this.ticks >= PER_CANDLE) {
+      this.ticks = 0;
+      this.candles.push({ o: price, c: price, h: price, l: price });
+      if (this.candles.length > N) this.candles.shift();
+    }
+  };
+
+  LiveChart.prototype.simTick = function () {
+    this.push(this.candles[this.candles.length - 1].c + (this.rand() - 0.5) * this.vol * 2);
+  };
+
+  LiveChart.prototype.draw = function () {
+    var cv = this.cv, W = cv.clientWidth || 520, H = cv.clientHeight || 190;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    var g = cv.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+
+    // canvas cannot resolve var(--x), so every colour is read off the root first
+    var cs = getComputedStyle(document.documentElement);
+    var tok = function (n) { return cs.getPropertyValue(n).trim(); };
+    var C = { fg: tok("--fg"), surface: tok("--surface"),
+              bull: tok("--bull"), bear: tok("--bear") };
+
+    var labW = 112, padT = 12, padB = 12, xR = W - labW, xL = 4;
+    var vals = [];
+    this.candles.forEach(function (k) { vals.push(k.h, k.l); });
+    this.zones.forEach(function (z) { vals.push(z.bottom, z.top); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var pad = (hi - lo) * 0.10 || Math.abs(hi) * 0.001 || 1;
+    lo -= pad; hi += pad;
+    var y = function (v) { return padT + (hi - v) / (hi - lo) * (H - padT - padB); };
+
+    var self = this, placed = [];
+    this.zones.forEach(function (z) {
+      var col = z.side === "demand" ? C.bull : C.bear;
+      var focus = z.tf === self.focus;
+      var yt = y(z.top), yb = y(z.bottom);
+      g.globalAlpha = focus ? 0.22 : 0.085; g.fillStyle = col;
+      g.fillRect(xL, yt, xR - xL, Math.max(2, yb - yt));
+      g.globalAlpha = 1; g.strokeStyle = col; g.lineWidth = focus ? 1.6 : 0.8;
+      g.strokeRect(xL + 0.5, yt + 0.5, xR - xL - 1, Math.max(2, yb - yt));
+
+      var ly = (yt + yb) / 2;
+      for (var i = 0; i < placed.length; i++) {
+        if (Math.abs(placed[i] - ly) < 14) { ly = placed[i] + 14; i = -1; }
+      }
+      ly = Math.max(12, Math.min(ly, H - 5)); placed.push(ly);
+      g.globalAlpha = 0.45; g.lineWidth = 0.9;
+      g.beginPath(); g.moveTo(xR, (yt + yb) / 2); g.lineTo(xR + 7, ly); g.stroke();
+      g.globalAlpha = focus ? 1 : 0.72; g.fillStyle = col;
+      g.font = '10.5px "IBM Plex Mono", ui-monospace, monospace';
+      g.textAlign = "left"; g.textBaseline = "middle";
+      g.fillText(z.tf + " " + z.side + " " + z.display_score + "/10" + (z.star ? " ★" : ""),
+                 xR + 10, ly);
+      g.globalAlpha = 1;
+    });
+
+    var n = this.candles.length, slot = (xR - xL) / n;
+    var bw = Math.max(1.5, Math.min(7, slot * 0.62));
+    this.candles.forEach(function (k, i) {
+      var cx = xL + slot * (i + 0.5), up = k.c >= k.o;
+      g.strokeStyle = g.fillStyle = up ? C.bull : C.bear;
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(Math.round(cx) + 0.5, y(k.h)); g.lineTo(Math.round(cx) + 0.5, y(k.l)); g.stroke();
+      var yo = y(k.o), yc = y(k.c);
+      g.fillRect(cx - bw / 2, Math.min(yo, yc), bw, Math.max(1.2, Math.abs(yc - yo)));
+    });
+
+    var px = this.candles[n - 1].c, yp = y(px);
+    g.strokeStyle = C.fg; g.globalAlpha = 0.5; g.lineWidth = 1; g.setLineDash([2, 4]);
+    g.beginPath(); g.moveTo(xL, yp); g.lineTo(xR, yp); g.stroke();
+    g.setLineDash([]); g.globalAlpha = 1;
+    var lbl = fmtPx(px);
+    g.font = '600 10.5px "IBM Plex Mono", ui-monospace, monospace';
+    var tw = g.measureText(lbl).width + 9, ty = yp < padT + 14 ? yp + 13 : yp - 8;
+    g.fillStyle = C.surface; g.globalAlpha = 0.94;
+    g.fillRect(xR - tw - 2, ty - 7, tw, 13); g.globalAlpha = 1;
+    g.fillStyle = C.fg; g.textAlign = "right"; g.textBaseline = "middle";
+    g.fillText(lbl, xR - 6, ty);
+  };
+
+  /* ── signal cards ── */
+  var cards = document.getElementById("cards");
+  SIGNALS.forEach(function (s) {
+    var z = s.active;
+    if (!z) return;
+    var card = el("div", "card" + (s.in_zone ? " live" : ""));
+
+    var head = el("div", "card-head");
+    head.appendChild(el("span", "p", s.instrument));
+    head.appendChild(el("span", "chip", z.tf));
+    var pill = el("span", "zp zp-" + z.side);
+    pill.appendChild(document.createTextNode(z.side));
+    if (z.star) pill.appendChild(el("span", "star", "★ in " + z.star));
+    head.appendChild(pill);
+    head.appendChild(el("span", "verdict " + (s.in_zone ? (z.side === "demand" ? "v-bull" : "v-bear") : "v-none"),
+      s.in_zone ? "price in zone" : (z.distance_pct != null ? z.distance_pct.toFixed(1) + "% away" : "—")));
+    card.appendChild(head);
+
+    var main = el("div", "card-main");
+    var mets = el("div", "mets");
+    [["score", z.display_score + "/10", scoreColor(z.display_score), "15px"],
+     ["range", fmtPx(z.bottom) + " – " + fmtPx(z.top), "var(--fg)", "12px"],
+     ["tests", z.tests + " / 3", z.tests >= 2 ? "var(--warn)" : "var(--fg)", "15px"]
+    ].forEach(function (m) {
+      var d = el("div", "met");
+      d.appendChild(el("div", "k", m[0]));
+      var v = el("div", "v", m[1]);
+      v.style.color = m[2]; v.style.fontSize = m[3];
+      d.appendChild(v); mets.appendChild(d);
+    });
+    main.appendChild(mets);
+
+    var ch = el("div", "chart");
+    var cv = document.createElement("canvas");
+    cv.setAttribute("role", "img");
+    cv.setAttribute("aria-label", s.instrument + " candles with its live zones");
+    ch.appendChild(cv);
+    var cap = el("div", "cap");
+    cap.appendChild(el("span", "dot", ""));
+    cap.appendChild(el("span", null, s.zones.length + " live zone" + (s.zones.length === 1 ? "" : "s")));
+    cap.appendChild(el("span", null, "·"));
+    cap.appendChild(el("span", null, "highlighted: " + z.tf + " " + z.side));
+    cap.appendChild(el("span", null, "·"));
+    cap.appendChild(el("span", null, DATA.tick_note));
+    ch.appendChild(cap);
+    main.appendChild(ch);
+    card.appendChild(main);
+
+    var foot = el("div", "card-foot");
+    foot.appendChild(el("span", null, "age " + z.age + " bars"));
+    foot.appendChild(el("span", null, "·"));
+    foot.appendChild(el("span", null, s.in_zone ? "price inside" : "waiting for price"));
+    if (z.star) foot.appendChild(el("span", "conf", "◆ confluence"));
+    card.appendChild(foot);
+
+    cards.appendChild(card);
+    CHARTS.push(new LiveChart(cv, s));
+  });
+
+  document.getElementById("sigNote").textContent =
+    "One card per instrument — the zone price is inside, or the nearest one. " +
+    SIGNALS.length + " instruments, " +
+    SIGNALS.reduce(function (a, s) { return a + s.zones.length; }, 0) + " live zones in the store.";
+
+  /* ── tables ── */
+  function row(tb, cells) {
+    var tr = document.createElement("tr");
+    cells.forEach(function (c) {
+      var td = el("td", c.cls || null);
+      if (c.node) td.appendChild(c.node); else td.textContent = c.t;
+      if (c.color) td.style.color = c.color;
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  }
+  function sidePill(s, star) {
+    var p = el("span", "zp zp-" + s);
+    p.appendChild(document.createTextNode(s));
+    if (star) p.appendChild(el("span", "star", "★"));
+    return p;
+  }
+
+  var all = [];
+  SIGNALS.forEach(function (s) { s.zones.forEach(function (z) { all.push(z); }); });
+
+  var near = all.filter(function (z) { return !z.inside && z.distance_pct != null && z.distance_pct <= 2; })
+                .sort(function (a, b) { return a.distance_pct - b.distance_pct; });
+  var nearTb = document.getElementById("nearRows");
+  near.forEach(function (z) {
+    row(nearTb, [
+      { t: z.instrument, cls: "n" }, { t: z.tf, cls: "n" }, { node: sidePill(z.side) },
+      { t: fmtPx(z.bottom) + " – " + fmtPx(z.top), cls: "n" },
+      { t: z.distance_pct.toFixed(2) + "%", cls: "n", color: z.distance_pct < 1 ? "var(--accent)" : "var(--fg-dim)" },
+      { t: z.display_score + "/10", cls: "n", color: scoreColor(z.display_score) },
+      { t: z.star ? "★ in " + z.star : "—", cls: "n", color: z.star ? "var(--accent)" : "var(--fg-faint)" }
+    ]);
+  });
+  if (!near.length) nearTb.innerHTML = '<tr><td colspan="7" class="empty">Nothing within 2% of price.</td></tr>';
+
+  var allTb = document.getElementById("allRows");
+  all.forEach(function (z) {
+    row(allTb, [
+      { t: z.instrument, cls: "n" }, { t: z.tf, cls: "n" }, { node: sidePill(z.side) },
+      { t: fmtPx(z.bottom) + " – " + fmtPx(z.top), cls: "n" },
+      { t: z.display_score + "/10", cls: "n", color: scoreColor(z.display_score) },
+      { t: z.tests + " / 3", cls: "n", color: z.tests >= 2 ? "var(--warn)" : "var(--fg-dim)" },
+      { t: z.age + "b", cls: "n" },
+      { t: z.star ? "★ in " + z.star : "—", cls: "n", color: z.star ? "var(--accent)" : "var(--fg-faint)" }
+    ]);
+  });
+  if (!all.length) allTb.innerHTML = '<tr><td colspan="8" class="empty">No live zones.</td></tr>';
+
+  var logTb = document.getElementById("logRows");
+  EVENTS.forEach(function (e) {
+    var col = e.kind === "invalidated" ? "var(--bear)"
+            : e.kind === "formed" ? "var(--accent)" : "var(--bull)";
+    row(logTb, [
+      { t: ago(e.at), cls: "n" }, { t: e.instrument, cls: "n" }, { t: e.tf, cls: "n" },
+      { node: sidePill(e.side) },
+      { t: e.score + "/10", cls: "n", color: scoreColor(e.score) },
+      { t: e.kind, color: col },
+      { t: e.died_of || (e.detail && e.detail.tests ? "tests " + e.detail.tests : "—"), cls: "n" }
+    ]);
+  });
+  if (!EVENTS.length) logTb.innerHTML = '<tr><td colspan="7" class="empty">No events yet. Run the poller.</td></tr>';
+
+  document.getElementById("cSig").textContent = SIGNALS.length;
+  document.getElementById("cNear").textContent = near.length;
+  document.getElementById("cAll").textContent = all.length;
+
+  /* ── tabs ── */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tabs button"));
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (o) {
+        var on = o === t;
+        o.setAttribute("aria-selected", String(on));
+        document.getElementById("tp-" + o.dataset.t).hidden = !on;
+      });
+    });
+  });
+
+  /* ── ticking ── */
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function drawAll() { CHARTS.forEach(function (c) { c.draw(); }); }
+  drawAll();
+  if (!reduce && CHARTS.length) {
+    setInterval(function () {
+      if (document.hidden) return;
+      CHARTS.forEach(function (c) { c.simTick(); c.draw(); });
+    }, TICK_MS);
+  }
+  var rt = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(rt); rt = setTimeout(drawAll, 120);
+  });
+})();
+</script>
