@@ -238,9 +238,9 @@ def signals(conn: sqlite3.Connection, instruments: list[str]) -> list[dict]:
     out = []
     for inst in instruments:
         zones = live_zones(conn, inst)
-        if not zones:
-            continue
         px = last_price(conn, inst)
+        # An instrument with no live zones still appears, with active=None. Dropping it
+        # silently made GBPUSD vanish from the terminal whenever the engine had nothing live.
         for z in zones:
             z["inside"] = px is not None and z["bottom"] <= px <= z["top"]
             if px is None:
@@ -252,8 +252,12 @@ def signals(conn: sqlite3.Connection, instruments: list[str]) -> list[dict]:
                 z["distance_pct"] = round(abs(edge - px) / px * 100, 2)
 
         inside = [z for z in zones if z["inside"]]
-        active = (max(inside, key=lambda z: z["display_score"]) if inside
-                  else min(zones, key=lambda z: z["distance_pct"] if z["distance_pct"] is not None else 1e9))
+        if not zones:
+            active = None
+        elif inside:
+            active = max(inside, key=lambda z: z["display_score"])
+        else:
+            active = min(zones, key=lambda z: z["distance_pct"] if z["distance_pct"] is not None else 1e9)
         out.append({
             "instrument": inst,
             "price": px,

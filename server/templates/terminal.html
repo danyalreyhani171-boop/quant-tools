@@ -413,11 +413,27 @@ var DATA = __DATA__;
   var cards = document.getElementById("cards");
   SIGNALS.forEach(function (s) {
     var z = s.active;
-    if (!z) return;
-    var card = el("div", "card" + (s.in_zone ? " live" : ""));
+    var card = el("div", "card" + (z && s.in_zone ? " live" : ""));
 
     var head = el("div", "card-head");
     head.appendChild(el("span", "p", s.instrument));
+    if (!z) {
+      head.appendChild(el("span", "verdict v-none", "no live zones"));
+      card.appendChild(head);
+      var nb = el("div", "card-main");
+      nb.appendChild(el("p", "note", "The engine has no live zones on this instrument right now. "
+        + "The price is still tracked, and a zone appears here the moment one forms."));
+      var nc = el("div", "chart");
+      var ncv = document.createElement("canvas");
+      ncv.setAttribute("role", "img");
+      ncv.setAttribute("aria-label", s.instrument + " candles, no live zones");
+      nc.appendChild(ncv);
+      nb.appendChild(nc);
+      card.appendChild(nb);
+      cards.appendChild(card);
+      CHARTS.push(new LiveChart(ncv, s));
+      return;
+    }
     head.appendChild(el("span", "chip", z.tf));
     var pill = el("span", "zp zp-" + z.side);
     pill.appendChild(document.createTextNode(z.side));
