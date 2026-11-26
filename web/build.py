@@ -91,6 +91,15 @@ def build() -> Path:
     out = DIST / "index.html"
     out.write_text(page)
 
+    # the privacy policy is a standalone page already, so it is copied as-is
+    priv = ROOT / "privacy.html"
+    if priv.exists():
+        (DIST / "privacy.html").write_text(priv.read_text())
+        left = [x for x in ("[YOUR FULL NAME OR BUSINESS NAME]", "[YOUR CONTACT EMAIL]")
+                if x in priv.read_text()]
+        if left:
+            print("  WARNING privacy.html still has placeholders: " + ", ".join(left))
+
     # a 404 that is not the host's default
     (DIST / "404.html").write_text(page)
 
@@ -101,6 +110,7 @@ def build() -> Path:
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         f"  <url><loc>{SITE_URL}/</loc><changefreq>weekly</changefreq></url>\n"
+        f"  <url><loc>{SITE_URL}/privacy.html</loc><changefreq>yearly</changefreq></url>\n"
         "</urlset>\n"
     )
     # security headers, honoured by Netlify and Cloudflare Pages
