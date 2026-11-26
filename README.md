@@ -150,3 +150,21 @@ The waitlist form posts to the page's own origin, which Netlify Forms handles wi
 On a host without form handling it fails gracefully and says so.
 
 `dist/` is generated and not committed.
+
+### Terminal page
+
+The marketing site is static. The terminal is not — it needs the zone store, so it is
+server-rendered by Python.
+
+```bash
+python3 server/poll.py --db drquant.db      # fill the store
+python3 server/web.py  --db drquant.db      # http://127.0.0.1:8080/terminal
+```
+
+`server/web.py` reads the store, injects the real zones as JSON into
+`server/templates/terminal.html`, and serves it. The same data is on `/api/signals`,
+`/api/zones`, `/api/events` and `/api/health`.
+
+Pass `--live` once MT5 is feeding the store; the page then says so instead of labelling
+itself a demo. Candles move on a simulated tick until then — `LiveChart.push(price)` is the
+only way price enters the chart, so wiring the feed changes nothing else.
