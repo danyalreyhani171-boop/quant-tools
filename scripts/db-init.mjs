@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 /**
- * Applies db/schema.sql to DATABASE_URL. Idempotent — safe to re-run.
+ * Applies the schema to DATABASE_URL. Idempotent — safe to re-run.
+ *
+ * The app also applies the schema automatically on first use, so this is only
+ * needed if you want to set the database up ahead of the first request.
  *
  * Usage: DATABASE_URL=postgres://... npm run db:init
  */
-import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import pg from "pg";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const schemaPath = join(here, "..", "db", "schema.sql");
+import { SCHEMA_SQL } from "../src/lib/schema.ts";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -27,9 +25,8 @@ const client = new pg.Client({
 });
 
 try {
-  const schema = await readFile(schemaPath, "utf8");
   await client.connect();
-  await client.query(schema);
+  await client.query(SCHEMA_SQL);
   console.log("Schema applied.");
 } catch (error) {
   console.error("Could not apply the schema:", error.message);

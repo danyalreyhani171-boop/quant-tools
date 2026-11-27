@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.mjs\"",
-    "db:init": "node scripts/db-init.mjs"
+    "db:init": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-init.mjs"
   },
   "dependencies": {
     "jose": "^6.2.18",

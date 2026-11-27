@@ -49,7 +49,7 @@ Needs Node 20.9+ and a Postgres database.
 ```bash
 npm install
 cp .env.example .env.local      # then fill it in — see below
-npm run db:init                 # applies db/schema.sql, idempotent
+npm run db:init                 # optional — the app also does this itself
 npm run dev
 ```
 
@@ -126,7 +126,7 @@ src/lib/
   targets.ts          the four outputs and their paste guides
   subscription.ts     the single definition of "may generate code"
   highlight.ts        Pine Script / MQL5 tokeniser
-db/schema.sql         users, generations, stripe_events
+src/lib/schema.ts     users, generations, stripe_events — applied automatically
 public/tools.html     the original static calculators, served at /tools.html
 ```
 
@@ -143,8 +143,27 @@ trade.
 
 ## Deploying
 
-Works on any Node host. On Vercel, note that `/api/generate` makes six sequential model calls
-and sets `maxDuration = 800`, which needs a plan that permits long function durations.
+**[DEPLOY.md](DEPLOY.md) is a click-by-click guide — no terminal needed.** It covers creating
+the three accounts, pasting five values into one form, and verifying the result. About 25
+minutes.
+
+`render.yaml` is a Render Blueprint: point Render at this repo and it builds the service,
+generates `AUTH_SECRET` itself, and prompts for the rest.
+
+Two things make a dashboard-only deploy work:
+
+- **The schema applies itself.** `ensureSchema()` runs the statements in `src/lib/schema.ts`
+  on first database use, guarded by a Postgres advisory lock so instances booting together
+  cannot race. Nobody has to run a migration.
+- **`/setup` reports what is missing.** It checks each setting, actually connects to the
+  database, and gives a plain-English fix for anything not working. It reports only whether a
+  value is present and functioning, never the value, and it is reachable without a login only
+  while no account exists.
+
+Vercel works too and `vercel.json` is included, but the generator makes six sequential model
+calls and can run for two or three minutes. Vercel's Hobby plan caps a function at 60 seconds,
+which cuts generations off part-way — this app needs the Pro plan there. Render's free plan has
+no such cap.
 
 ---
 

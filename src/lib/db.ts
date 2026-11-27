@@ -1,4 +1,5 @@
 import { Pool, type QueryResultRow } from "pg";
+import { SCHEMA_LOCK_KEY, SCHEMA_SQL } from "@/lib/schema";
 
 /**
  * A single pooled Postgres connection, cached on `globalThis` so Next's dev
@@ -39,10 +40,48 @@ export function getPool(): Pool {
   return globalThis.__dr71Pool;
 }
 
+/**
+ * Applies the schema on first use, once per process.
+ *
+ * This is what lets someone deploy from a web dashboard without ever opening
+ * a terminal to run migrations. It is safe to call on every cold start: every
+ * statement is `IF NOT EXISTS`, and a Postgres advisory lock serialises
+ * instances that boot at the same moment.
+ */
+let schemaReady: Promise<void> | null = null;
+
+async function applySchema(): Promise<void> {
+  const client = await getPool().connect();
+  try {
+    // Blocks until any other booting instance has finished.
+    await client.query("SELECT pg_advisory_lock($1)", [SCHEMA_LOCK_KEY.toString()]);
+    try {
+      await client.query(SCHEMA_SQL);
+    } finally {
+      await client.query("SELECT pg_advisory_unlock($1)", [SCHEMA_LOCK_KEY.toString()]);
+    }
+  } finally {
+    client.release();
+  }
+}
+
+export function ensureSchema(): Promise<void> {
+  if (!schemaReady) {
+    schemaReady = applySchema().catch((error) => {
+      // Do not cache a failure: a transient outage during boot should not
+      // leave the process permanently convinced the schema is missing.
+      schemaReady = null;
+      throw error;
+    });
+  }
+  return schemaReady;
+}
+
 export async function query<T extends QueryResultRow>(
   sql: string,
   params: readonly unknown[] = [],
 ): Promise<T[]> {
+  await ensureSchema();
   const result = await getPool().query<T>(sql, params as unknown[]);
   return result.rows;
 }

@@ -54,10 +54,20 @@ export function getPriceId(): string {
   return priceId;
 }
 
-/** Absolute base URL for Stripe redirect targets. */
+/**
+ * Absolute base URL for Stripe redirect targets.
+ *
+ * Falls back to the address the host advertises, so a deploy on Render or
+ * Vercel works before anyone has set NEXT_PUBLIC_APP_URL by hand.
+ */
 export function getBaseUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_APP_URL;
   if (explicit) return explicit.replace(/\/+$/, "");
+  // Render
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, "");
+  }
+  // Vercel
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   }
