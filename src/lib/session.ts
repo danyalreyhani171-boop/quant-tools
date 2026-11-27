@@ -9,7 +9,7 @@ import { SignJWT, jwtVerify } from "jose";
  * rather than when the token happens to expire.
  */
 
-export const SESSION_COOKIE = "qt_session";
+export const SESSION_COOKIE = "dr71_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 export interface SessionPayload {

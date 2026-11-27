@@ -3,12 +3,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Quant Tools — Plain English to Pine Script & MQL5",
-    template: "%s · Quant Tools",
+    default: "DR71Codes — Plain English to Pine Script & MQL5",
+    template: "%s · DR71Codes",
   },
   description:
     "Describe your trading strategy in plain English and get working TradingView Pine Script v6 or MetaTrader 5 MQL5 code, written and checked by a six-agent pipeline. Copy, paste, trade.",
-  applicationName: "Quant Tools",
+  applicationName: "DR71Codes",
   keywords: [
     "Pine Script generator",
     "MQL5 generator",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "trading strategy code",
   ],
   openGraph: {
-    title: "Quant Tools — Plain English to Pine Script & MQL5",
+    title: "DR71Codes — Plain English to Pine Script & MQL5",
     description:
       "Describe your strategy in plain English. Get working Pine Script v6 or MQL5 code with stop loss, take profit and position sizing built in.",
     type: "website",

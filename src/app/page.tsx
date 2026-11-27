@@ -215,7 +215,7 @@ export default async function HomePage() {
                 </p>
                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-slate-300">
                   <p>
-                    Quant Tools writes code. That is the whole product. It does not connect to a
+                    DR71Codes writes code. That is the whole product. It does not connect to a
                     broker, place live orders, or run a backtest for you — TradingView&apos;s
                     Strategy Tester and MetaTrader&apos;s own tester already do that better than we
                     could, and they do it on your data.

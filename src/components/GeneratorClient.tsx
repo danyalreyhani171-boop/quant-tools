@@ -551,7 +551,7 @@ export default function GeneratorClient({ initialTarget }: { initialTarget?: Tar
             {TARGETS[result.targetId].executes
               ? "It places orders. Run it in the Strategy Tester or on a demo account, check that entries, exits, stops and position sizes behave the way you expect, and only then consider real money."
               : "Check the plotted values against your own reading of the chart before you act on its signals."}{" "}
-            Quant Tools gives no financial advice and makes no claim that this strategy is
+            DR71Codes gives no financial advice and makes no claim that this strategy is
             profitable.
           </p>
         </div>

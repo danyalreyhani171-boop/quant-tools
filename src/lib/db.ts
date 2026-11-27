@@ -6,7 +6,7 @@ import { Pool, type QueryResultRow } from "pg";
  */
 
 declare global {
-  var __quantToolsPool: Pool | undefined;
+  var __dr71Pool: Pool | undefined;
 }
 
 function createPool(): Pool {
@@ -33,10 +33,10 @@ function createPool(): Pool {
 }
 
 export function getPool(): Pool {
-  if (!globalThis.__quantToolsPool) {
-    globalThis.__quantToolsPool = createPool();
+  if (!globalThis.__dr71Pool) {
+    globalThis.__dr71Pool = createPool();
   }
-  return globalThis.__quantToolsPool;
+  return globalThis.__dr71Pool;
 }
 
 export async function query<T extends QueryResultRow>(

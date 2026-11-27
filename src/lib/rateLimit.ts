@@ -13,14 +13,14 @@ interface Bucket {
 }
 
 declare global {
-  var __quantToolsRateBuckets: Map<string, Bucket> | undefined;
+  var __dr71RateBuckets: Map<string, Bucket> | undefined;
 }
 
 function buckets(): Map<string, Bucket> {
-  if (!globalThis.__quantToolsRateBuckets) {
-    globalThis.__quantToolsRateBuckets = new Map();
+  if (!globalThis.__dr71RateBuckets) {
+    globalThis.__dr71RateBuckets = new Map();
   }
-  return globalThis.__quantToolsRateBuckets;
+  return globalThis.__dr71RateBuckets;
 }
 
 export interface RateLimitResult {

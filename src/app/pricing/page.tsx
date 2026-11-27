@@ -8,7 +8,7 @@ import { PLAN } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Quant Tools Pro — ${PLAN.priceLabel} a month for unlimited Pine Script and MQL5 generation.`,
+  description: `DR71Codes Pro — ${PLAN.priceLabel} a month for unlimited Pine Script and MQL5 generation.`,
 };
 
 const FAQ = [
@@ -18,7 +18,7 @@ const FAQ = [
   },
   {
     q: "Does it place trades for me?",
-    a: "No. Quant Tools generates code and nothing else. There is no broker connection and no live execution anywhere in the product. The MQL5 Expert Advisor and Pine strategy you generate can place orders once you install them yourself, on your own platform, under your own control.",
+    a: "No. DR71Codes generates code and nothing else. There is no broker connection and no live execution anywhere in the product. The MQL5 Expert Advisor and Pine strategy you generate can place orders once you install them yourself, on your own platform, under your own control.",
   },
   {
     q: "Does it backtest?",

@@ -1,4 +1,4 @@
--- Quant Tools schema. Idempotent: safe to run on every deploy.
+-- DR71Codes schema. Idempotent: safe to run on every deploy.
 
 CREATE TABLE IF NOT EXISTS users (
   id                     TEXT PRIMARY KEY,

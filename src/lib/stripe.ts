@@ -8,14 +8,14 @@ import Stripe from "stripe";
  */
 
 declare global {
-  var __quantToolsStripe: Stripe | undefined;
+  var __dr71Stripe: Stripe | undefined;
 }
 
 export const PLAN = {
   priceLabel: "£17.99",
   interval: "month",
   currency: "GBP",
-  name: "Quant Tools Pro",
+  name: "DR71Codes Pro",
   features: [
     "Unlimited strategy generations",
     "All four outputs: Pine Script indicator & strategy, MQL5 indicator & EA",
@@ -28,20 +28,20 @@ export const PLAN = {
 } as const;
 
 export function getStripe(): Stripe {
-  if (!globalThis.__quantToolsStripe) {
+  if (!globalThis.__dr71Stripe) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) {
       throw new Error("STRIPE_SECRET_KEY is not set. Add it to your environment and restart.");
     }
-    globalThis.__quantToolsStripe = new Stripe(key, {
+    globalThis.__dr71Stripe = new Stripe(key, {
       // Pin the API version so a Stripe-side upgrade cannot change behaviour
       // underneath a running deployment.
       apiVersion: "2026-11-18.endive",
       typescript: true,
-      appInfo: { name: "Quant Tools", version: "1.0.0" },
+      appInfo: { name: "DR71Codes", version: "1.0.0" },
     });
   }
-  return globalThis.__quantToolsStripe;
+  return globalThis.__dr71Stripe;
 }
 
 export function getPriceId(): string {

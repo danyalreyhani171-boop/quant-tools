@@ -19,7 +19,7 @@ export function Logo({ className = "" }: { className?: string }) {
         </svg>
       </span>
       <span className="text-lg font-semibold tracking-tight">
-        Quant<span className="text-brand-400">Tools</span>
+        DR71<span className="text-brand-400">Codes</span>
       </span>
     </Link>
   );
@@ -117,13 +117,13 @@ export function SiteFooter() {
         <div className="mt-8 border-t border-ink-700 pt-6 text-xs leading-relaxed text-muted">
           <p className="font-medium text-slate-400">Risk warning</p>
           <p className="mt-1 max-w-3xl">
-            Quant Tools generates code. It does not give financial advice, does not execute
+            DR71Codes generates code. It does not give financial advice, does not execute
             trades, and does not backtest for you. Generated code is a starting point that you
             must read, test and take responsibility for — run it in the TradingView Strategy
             Tester or on a MetaTrader demo account before risking real money. Trading carries
             risk of loss.
           </p>
-          <p className="mt-4">© {new Date().getFullYear()} Quant Tools. All rights reserved.</p>
+          <p className="mt-4">© {new Date().getFullYear()} DR71Codes. All rights reserved.</p>
         </div>
       </div>
     </footer>
