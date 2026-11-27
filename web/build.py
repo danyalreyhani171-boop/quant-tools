@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "index.html"
 DIST = ROOT / "dist"
 
-SITE_URL = "https://drquantmtf.com"        # change when the domain is settled
+SITE_URL = "https://quantivedr.netlify.app"   # change when a custom domain is added
 DESCRIPTION = (
     "Multi-timeframe supply and demand zones on gold, GBP/USD, Nasdaq and crude. "
     "Scored out of ten, marked where the timeframes agree, and removed when they stop "
